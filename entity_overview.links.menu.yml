@@ -1,0 +1,5 @@
+entity_overview.list:
+  title: 'Entity overview'
+  parent: system.admin_config_content
+  description: 'Configure entity overview.'
+  route_name: entity_overview.list

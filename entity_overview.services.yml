@@ -1,0 +1,8 @@
+services:
+  entity_overview.manager:
+    class: Drupal\entity_overview\OverviewManager
+    arguments:
+      - '@entity_type.manager'
+      - '@config.factory'
+      - '@entity_field.manager'
+      - '@entity_type.bundle.info'

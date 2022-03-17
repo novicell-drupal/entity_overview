@@ -1,0 +1,39 @@
+entity_overview.list:
+  path: '/admin/config/content/entity_overview'
+  defaults:
+    _form: '\Drupal\entity_overview\Form\EntityOverviewList'
+    _title: 'Entity overview'
+  requirements:
+    _permission: 'configure entity overview'
+
+entity_overview.edit:
+  path: '/admin/config/content/entity_overview/edit/{entity_bundle}'
+  defaults:
+    _form: '\Drupal\entity_overview\Form\EntityOverviewEdit'
+    _title_callback: '\Drupal\entity_overview\Form\EntityOverviewEdit::getTitle'
+  requirements:
+    _permission: 'configure entity overview'
+
+entity_overview.add:
+  path: '/admin/config/content/entity_overview/add'
+  defaults:
+    _controller: '\Drupal\entity_overview\Controller\EntityOverviewController::add'
+    _title: 'Add overview config'
+  requirements:
+    _permission: 'configure entity overview'
+
+entity_overview.add_form:
+  path: '/admin/config/content/entity_overview/add/{entity_bundle}'
+  defaults:
+    _form: '\Drupal\entity_overview\Form\EntityOverviewEdit'
+    _title: 'Add overview config'
+  requirements:
+    _permission: 'configure entity overview'
+
+entity_overview.delete:
+  path: '/admin/config/content/entity_overview/delete/{entity_bundle}'
+  defaults:
+    _form: '\Drupal\entity_overview\Form\EntityOverviewDelete'
+    _title: 'Delete overview config'
+  requirements:
+    _permission: 'configure entity overview'

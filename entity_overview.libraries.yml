@@ -1,0 +1,7 @@
+pager:
+  version: VERSION
+  js:
+    js/overview_pager.js: {}
+  dependencies:
+    - core/drupal
+    - core/drupal.ajax

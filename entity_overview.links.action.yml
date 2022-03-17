@@ -1,0 +1,5 @@
+entity_overview.add_entity_bundle:
+  route_name: 'entity_overview.add'
+  title: 'Add overview config'
+  appears_on:
+    - entity_overview.list

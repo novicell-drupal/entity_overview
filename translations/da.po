@@ -1,0 +1,112 @@
+# Danish translation of Entity Overview (all releases)
+# Copyright (c) 2021 Novicell
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: entity_overview (all releases)\n"
+"POT-Creation-Date: 2019-01-25 11:59+0000\n"
+"PO-Revision-Date: 2019-01-25 13:08+0100\n"
+"Language-Team: Danish\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+"Last-Translator: \n"
+"Language: da\n"
+"X-Generator: Poedit 1.8.11\n"
+
+msgid "Entity Overview"
+msgstr "Indholdsoverblik"
+
+msgid "Overview functionality for entities."
+msgstr "Overbliksfunktionalitet til entities."
+
+msgid "Overview filter"
+msgstr "Overbliksfilter"
+
+msgid "Overview configuration"
+msgstr "Overblikskonfiguration"
+
+msgid "Field with filter and display options for entities."
+msgstr "Felt med filter og visningsindstillinger til entiteter."
+
+msgid "The available types of entities."
+msgstr "De tilgængelige typer af entiteter."
+
+msgid "Facets"
+msgstr "Facetter"
+
+msgid "Overview form"
+msgstr "Overbliksformular"
+
+msgid "List date"
+msgstr "Liste dato"
+
+msgid "Alphabetical"
+msgstr "Alfabetisk"
+
+msgid "Display of total number of items"
+msgstr "Visning af total antal elementer"
+
+msgid "Total display: @show_total"
+msgstr "Total visning: @show_total"
+
+msgid "Filtered out of total number of items"
+msgstr "Filtrede ud af total antal elements"
+
+msgid "Shown items out of filtered number of items"
+msgstr "Vist elementer ud af filtrerede antal elementer"
+
+msgid "Showing @count out of @total"
+msgstr "Viser @count ud af @total"
+
+msgid "Show entities of this type."
+msgstr "Vis elementer af denne type."
+
+msgid "Allow exposing facets"
+msgstr "Tillad valg af facetter"
+
+msgid "Display pager at the bottom."
+msgstr "Vis pager i bunden."
+
+msgid "Select the facets that you want to expose to the user."
+msgstr "Vælg hvilke facetter du gerne vil give brugere adgang til."
+
+msgid "How many entities to show at once."
+msgstr "Hvor mange elementer skal vises på en gang."
+
+msgid "Page size select"
+msgstr "Side størrelses valg"
+
+msgid "What criteria to sort entities by."
+msgstr "Hvilket kriterie skal elementer sorteres efter."
+
+msgid "Sort select"
+msgstr "Sorterings valg"
+
+msgid "Add overview config"
+msgstr "Tilføj overblikskonfiguration"
+
+msgid "Configure Entity Overview"
+msgstr "Konfigurer indholdsoverblikke"
+
+msgid "Configure entity overview."
+msgstr "Konfigurer indholdsoverblikke."
+
+msgid "There are no overview configurations yet."
+msgstr "Der er ingen overblikskonfigurationer endnu."
+
+msgid "What fields can be used as facets?"
+msgstr "Hvilke felter kan bruges som facetter?"
+
+msgid "What field should be used for sorting?"
+msgstr "Hvilket felt skal bruges til sortering?"
+
+msgid "There is no new content types ready for overviews."
+msgstr "Der er ingen nye indholdstyper der er klar til overblik."
+
+msgid "Are you sure you want to delete the overview config %entity_bundle?"
+msgstr "Er du sikker på at du vil slette overblikskonfigurationen %entity_bundle?"
+
+msgid "Overview config %entity_bundle has been deleted."
+msgstr "Overblikskonfigurationen %entity_bundle er blevet slettet."

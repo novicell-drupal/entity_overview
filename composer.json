@@ -1,0 +1,14 @@
+{
+    "name": "novicell/entity_overview",
+    "type": "drupal-module",
+    "description": "Entity Overview",
+    "keywords": [
+        "Novicell"
+    ],
+    "license": "GPL-2.0+",
+    "homepage": "https://www.novicell.dk",
+    "minimum-stability": "dev",
+    "require": {
+        "drupal/html5history": "^1.0"
+    }
+}

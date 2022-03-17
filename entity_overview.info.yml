@@ -1,0 +1,13 @@
+name: Entity Overview
+description: Overview functionality for entities.
+type: module
+core_version_requirement: ^8 || ^9
+version: '1.0'
+
+dependencies:
+  - core:text
+  - core:datetime
+  - html5history:html5history
+
+interface translation project: entity_overview
+interface translation server pattern: modules/contrib/entity_overview/translations/%language.po
