@@ -1,0 +1,23 @@
+<?php
+
+use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
+
+/**
+ * Update Entity Overview with engine plugin support
+ */
+function entity_overview_update_9001() {
+  $config_factory = \Drupal::configFactory();
+  /** @var EntityTypeBundleInfoInterface $entityTypeBundleInfo */
+  $entityTypeBundleInfo = \Drupal::service('entity_type.bundle.info');
+  $list = $config_factory->listAll('entity_overview.');
+  foreach ($list as $config_id) {
+    $config = $config_factory->getEditable($config_id);
+    if (!$config->isNew()) {
+      $config->set('engine', 'entity_query');
+      $config->set('show_total', '');
+      $bundle_info = $entityTypeBundleInfo->getBundleInfo($config->get('entity_type_id'));
+      $config->set('label', $bundle_info[$config->get('bundle')]['label']);
+      $config->save();
+    }
+  }
+}

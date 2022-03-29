@@ -8,9 +8,12 @@ use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Pager\Pager;
+use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\node\Entity\Node;
 
 class OverviewManager {
+
+  use StringTranslationTrait;
 
   /**
    * @var EntityStorageInterface
@@ -37,12 +40,18 @@ class OverviewManager {
    */
   protected $entityTypeBundleInfo;
 
-  function __construct(EntityTypeManagerInterface $entityTypeManager, ConfigFactoryInterface $configFactory, EntityFieldManagerInterface $entityFieldManager, EntityTypeBundleInfoInterface $entityTypeBundleInfo) {
+  /**
+   * @var \Drupal\entity_overview\EngineManager
+   */
+  protected $engineManager;
+
+  function __construct(EntityTypeManagerInterface $entityTypeManager, ConfigFactoryInterface $configFactory, EntityFieldManagerInterface $entityFieldManager, EntityTypeBundleInfoInterface $entityTypeBundleInfo, EngineManager $engineManager) {
     $this->entityTypeManager = $entityTypeManager;
     $this->entityFieldManager = $entityFieldManager;
     $this->entityTypeBundleInfo = $entityTypeBundleInfo;
     $this->taxonomyStorage = $entityTypeManager->getStorage('taxonomy_term');
     $this->configFactory = $configFactory;
+    $this->engineManager = $engineManager;
   }
 
   /**
@@ -59,9 +68,19 @@ class OverviewManager {
     return $result;
   }
 
+  /**
+   * @param string $entity_bundle
+   *
+   * @return array
+   */
   public function getEntityBundleConfig($entity_bundle) {
-    $config = $this->configFactory->get('entity_overview.' . $entity_bundle);
-    return $config->getRawData();
+    $configs = &drupal_static(__FUNCTION__, []);
+    if (!empty($configs[$entity_bundle])) {
+      return $configs[$entity_bundle];
+    }
+
+    $configs[$entity_bundle] = $this->configFactory->get('entity_overview.' . $entity_bundle)->getRawData();
+    return $configs[$entity_bundle];
   }
 
   /**
@@ -83,9 +102,8 @@ class OverviewManager {
       'form_element' => $element_type,
     ];
 
-    $entity_info = explode('.', $entity_bundle);
     /** @var \Drupal\Core\Entity\EntityFieldManagerInterface $entityFieldManager */
-    $definitions = $this->entityFieldManager->getFieldDefinitions($entity_info[0], $entity_info[1]);
+    $definitions = $this->entityFieldManager->getFieldDefinitions($this->getEntityTypeID($entity_bundle), $this->getBundle($entity_bundle));
     $definition = $definitions[$field_name];
     switch ($definition->getType()) {
       case 'entity_reference':
@@ -138,25 +156,8 @@ class OverviewManager {
    *
    * @return array
    */
-  public function getSortCriterias() {
-    return [
-      'newest' => t('Newest first'),
-      'oldest' => t('Oldest first'),
-      'alphabetical' => t('Alphabetical'),
-    ];
-  }
-
-  /**
-   * Get list of supported displays of totals
-   *
-   * @return array
-   */
-  public function getShowTotalOptions() {
-    return [
-      '' => t('None'),
-      'filtered' => t('Filtered out of total number of items'),
-      'shown' => t('Shown items out of filtered number of items'),
-    ];
+  public function getSortCriterias($entity_bundle) {
+    return $this->getEngine($entity_bundle)->getSortCriterias();
   }
 
   /**
@@ -169,12 +170,73 @@ class OverviewManager {
   }
 
   /**
-   * @param string $entity_field
+   * @param string $entity_bundle
    *
    * @return string
    */
-  public function getSortField($entity_field) {
-    return $this->getEntityBundleConfig($entity_field)['sort_field'] ?? 'field_list_date';
+  public function getLabel($entity_bundle) {
+    $label = $this->getEntityBundleConfig($entity_bundle)['label'] ?? NULL;
+    if (empty($label)) {
+      if (empty($this->getEntityTypeID($entity_bundle))) {
+        return $entity_bundle;
+      } else {
+        $bundle_info = $this->entityTypeBundleInfo->getBundleInfo($this->getEntityTypeID($entity_bundle));
+        return $bundle_info[$this->getBundle($entity_bundle)]['label'];
+      }
+    } else {
+      return $label;
+    }
+  }
+
+  /**
+   * @param string $entity_bundle
+   *
+   * @return string|null
+   */
+  public function getEntityTypeID($entity_bundle) {
+    return $this->getEntityBundleConfig($entity_bundle)['entity_type_id'] ?? NULL;
+  }
+
+  /**
+   * @param string $entity_bundle
+   *
+   * @return string|null
+   */
+  public function getBundle($entity_bundle) {
+    return $this->getEntityBundleConfig($entity_bundle)['bundle'] ?? NULL;
+  }
+
+  /**
+   * @param string $entity_bundle
+   *
+   * @return string
+   */
+  public function getSortField($entity_bundle) {
+    return $this->getEntityBundleConfig($entity_bundle)['sort_field'] ?? 'field_list_date';
+  }
+
+  /**
+   * @param string $entity_bundle
+   *
+   * @return string
+   */
+  public function getShowTotal($entity_bundle) {
+    return $this->getEntityBundleConfig($entity_bundle)['show_total'] ?? '';
+  }
+
+  /**
+   * @param $entity_bundle
+   *
+   * @return \Drupal\entity_overview\EngineInterface
+   * @throws \Drupal\Component\Plugin\Exception\PluginException
+   */
+  public function getEngine($entity_bundle) {
+    $engines = &drupal_static(__FUNCTION__, []);
+    if (empty($engines[$entity_bundle])) {
+      $engine = $this->getEntityBundleConfig($entity_bundle)['engine'] ?? 'entity_query';
+      $engines[$entity_bundle] = $this->engineManager->createInstance($engine);
+    }
+    return $engines[$entity_bundle];
   }
 
   /**
@@ -182,44 +244,10 @@ class OverviewManager {
    * @param array $filter
    * @param int $page
    *
-   * @return EntityInterface[]
+   * @return mixed
    */
   public function getResult($entity_bundle, array $filter = [], $page = 0) {
-    $entity_info = explode('.', $entity_bundle);
-    $storage = $this->entityTypeManager->getStorage($entity_info[0]);
-    $keys = $this->entityTypeManager->getDefinition($entity_info[0])->getKeys();
-    $query = $storage->getQuery()
-      ->condition($keys['bundle'], $entity_info[1])
-      ->condition('status', 1);
-    foreach ($filter['fields'] as $field_name => $value) {
-      if (empty($value)) {
-        continue;
-      }
-      if (is_array($value)) {
-        $query->condition($field_name, $value, 'IN');
-      } else {
-        $query->condition($field_name, $value);
-      }
-    }
-    if ($filter['pagination']) {
-      \Drupal::requestStack()->getCurrentRequest()->query->set('page', $page);
-      $query->pager($filter['count']);
-    } elseif (isset($filter['count']) && $filter['count'] > 0) {
-      $query->range($page * $filter['count'], $filter['count']);
-    }
-    switch ($filter['sort']) {
-      case 'alphabetical':
-        $query->sort($keys['label'], 'ASC');
-        break;
-      case 'oldest':
-        $query->sort($this->getSortField($entity_bundle), 'ASC');
-        break;
-      default:
-        $query->sort($this->getSortField($entity_bundle), 'DESC');
-        break;
-    }
-
-    return $query->execute();
+    return $this->getEngine($entity_bundle)->getResult($entity_bundle, $filter, $page);
   }
 
   /**
@@ -230,10 +258,7 @@ class OverviewManager {
    * @return EntityInterface[]
    */
   public function getEntities($entity_bundle, array $filter = [], $page = 0) {
-    $entity_info = explode('.', $entity_bundle);
-    $storage = $this->entityTypeManager->getStorage($entity_info[0]);
-    $ids = $this->getResult($entity_bundle, $filter, $page);
-    return $storage->loadMultiple($ids);
+    return $this->getEngine($entity_bundle)->getEntities($entity_bundle, $filter, $page);
   }
 
   /**
@@ -244,49 +269,7 @@ class OverviewManager {
    * @return \Drupal\Core\StringTranslation\TranslatableMarkup
    */
   public function getEntitiesTotal($entity_bundle, array $filter = [], $shown = 0) {
-    $entity_info = explode('.', $entity_bundle);
-    $keys = $this->entityTypeManager->getDefinition($entity_info[0])->getKeys();
-    $count = 0;
-    $total = 0;
-    switch ($filter['show_total']) {
-      case 'filtered':
-        $query = $this->entityTypeManager->getStorage($entity_info[0])->getQuery()
-          ->condition($keys['bundle'], $entity_info[1])
-          ->condition('status', 1)
-          ->count();
-        $total = $query->execute();
-        foreach ($filter['fields'] as $field_name => $value) {
-          if (empty($value)) {
-            continue;
-          }
-          if (is_array($value)) {
-            $query->condition($field_name, $value, 'IN');
-          } else {
-            $query->condition($field_name, $value);
-          }
-        }
-        $count = $query->execute();
-        break;
-      case 'shown':
-        $count = $shown;
-        $query = $this->entityTypeManager->getStorage($entity_info[0])->getQuery()
-          ->condition($keys['bundle'], $entity_info[1])
-          ->condition('status', 1)
-          ->count();
-        foreach ($filter['fields'] as $field_name => $value) {
-          if (empty($value)) {
-            continue;
-          }
-          if (is_array($value)) {
-            $query->condition($field_name, $value, 'IN');
-          } else {
-            $query->condition($field_name, $value);
-          }
-        }
-        $total = $query->execute();
-        break;
-    }
-    return t('Showing @count out of @total', ['@count' => $count, '@total' => $total]);
+    return $this->getEngine($entity_bundle)->getEntitiesTotal($entity_bundle, $filter, $shown);
   }
 
 }

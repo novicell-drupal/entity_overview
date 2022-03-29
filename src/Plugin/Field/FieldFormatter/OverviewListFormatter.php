@@ -2,6 +2,7 @@
 
 namespace Drupal\entity_overview\Plugin\Field\FieldFormatter;
 
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Field\FormatterBase;
@@ -28,6 +29,11 @@ class OverviewListFormatter extends FormatterBase {
   protected $overviewManager;
 
   /**
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
+   */
+  protected $entityTypeManager;
+
+  /**
    * Constructs a FormatterBase object.
    *
    * @param string $plugin_id
@@ -45,16 +51,17 @@ class OverviewListFormatter extends FormatterBase {
    * @param array $third_party_settings
    *   Any third party settings.
    */
-  public function __construct($plugin_id, $plugin_definition, FieldDefinitionInterface $field_definition, array $settings, $label, $view_mode, array $third_party_settings, OverviewManager $overviewManager) {
+  public function __construct($plugin_id, $plugin_definition, FieldDefinitionInterface $field_definition, array $settings, $label, $view_mode, array $third_party_settings, OverviewManager $overviewManager, EntityTypeManagerInterface $entityTypeManager) {
     parent::__construct($plugin_id, $plugin_definition, $field_definition, $settings, $label, $view_mode, $third_party_settings);
     $this->overviewManager = $overviewManager;
+    $this->entityTypeManager = $entityTypeManager;
   }
 
   /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
-    return new static($plugin_id, $plugin_definition, $configuration['field_definition'], $configuration['settings'], $configuration['label'], $configuration['view_mode'], $configuration['third_party_settings'], $container->get('entity_overview.manager'));
+    return new static($plugin_id, $plugin_definition, $configuration['field_definition'], $configuration['settings'], $configuration['label'], $configuration['view_mode'], $configuration['third_party_settings'], $container->get('entity_overview.manager'), $container->get('entity_type.manager'));
   }
 
   /**
@@ -66,9 +73,8 @@ class OverviewListFormatter extends FormatterBase {
     foreach ($items as $delta => $item) {
       $entity_bundle = $items->getSetting('entity_bundle');
       $entities = $this->overviewManager->getEntities($entity_bundle, $item->getValue());
-      $entity_info = explode('.', $entity_bundle);
-      $elements[$delta] = \Drupal::entityTypeManager()->getViewBuilder($entity_info[0])->viewMultiple($entities, $this->getSetting('view_mode'));
-      $elements[$delta]['#cache']['tags'][] = $entity_info[0] . '_list';
+      $elements[$delta] = $this->entityTypeManager->getViewBuilder($this->overviewManager->getEntityTypeID($entity_bundle))->viewMultiple($entities, $this->getSetting('view_mode'));
+      $elements[$delta]['#cache']['tags'][] = $this->overviewManager->getEntityTypeID($entity_bundle) . '_list';
     }
 
     return $elements;
@@ -90,7 +96,7 @@ class OverviewListFormatter extends FormatterBase {
     return [
         'view_mode' => [
           '#type' => 'select',
-          '#title' => t('View mode'),
+          '#title' => $this->t('View mode'),
           '#options' => $this->overviewManager->getViewModes(),
           '#default_value' => $this->getSetting('view_mode'),
           '#required' => TRUE,

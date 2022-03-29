@@ -6,3 +6,7 @@ services:
       - '@config.factory'
       - '@entity_field.manager'
       - '@entity_type.bundle.info'
+      - '@plugin.entity_overview.engine'
+  plugin.entity_overview.engine:
+    class: Drupal\entity_overview\EngineManager
+    parent: default_plugin_manager

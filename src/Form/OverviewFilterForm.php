@@ -61,11 +61,13 @@ class OverviewFilterForm extends FormBase {
   public function buildForm(array $form, FormStateInterface $form_state, array $options = []) {
     $this->options = $options;
     $values = $this->options;
-    $entity_info = explode('.', $options['entity_bundle']);
+    $entity_bundle = $options['entity_bundle'];
 
     $form['#attributes']['class'][] = 'overview-form';
     $form['#attached']['library'] = array_merge($form['#attached']['library'] ?? [], ['html5history/html5history.ajax']);
-    $form['#cache']['tags'][] = $entity_info[0] . '_list';
+    if (!empty($this->overviewManager->getEntityTypeID($entity_bundle))) {
+      $form['#cache']['tags'][] = $this->overviewManager->getEntityTypeID($entity_bundle) . '_list';
+    }
 
     $values['page'] = 0;
     unset($values['facets']);
@@ -152,7 +154,7 @@ class OverviewFilterForm extends FormBase {
     if (in_array('sort', $options['facets'])) {
       $form['facets']['sort'] = [
         '#type' => 'select',
-        '#options' => $this->overviewManager->getSortCriterias(),
+        '#options' => $this->overviewManager->getSortCriterias($entity_bundle),
         '#default_value' => empty($form_state->get('sort')) ? 'newest' : $form_state->get('sort'),
         '#ajax' => $ajax
       ];
@@ -237,6 +239,7 @@ class OverviewFilterForm extends FormBase {
    * @return array
    */
   protected function optionsFromFormState(FormStateInterface $form_state) {
+    $entity_bundle = $form_state->get('entity_bundle');
     $options = [
       'entity_bundle' => $form_state->get('entity_bundle'),
       'fields' => $form_state->get('fields'),
@@ -244,10 +247,10 @@ class OverviewFilterForm extends FormBase {
       'view_mode' => $form_state->get('view_mode'),
       'pagination' => $form_state->get('pagination'),
       'sort' => $form_state->getValue('sort') ?? $form_state->get('sort'),
-      'show_total' => $form_state->get('show_total'),
+      'show_total' => $form_state->get('show_total') ?? $this->overviewManager->getShowTotal($entity_bundle),
       'page' => $form_state->getValue('page') ?? $form_state->get('page') ?? 0
     ];
-    \Drupal::requestStack()->getCurrentRequest()->query->set('page', $options['page']);
+    $this->request->query->set('page', $options['page']);
     foreach ($options['fields'] as $key => $value) {
       if ($form_state->hasValue($key)) {
         if (is_array($form_state->getValue($key))) {
@@ -300,8 +303,7 @@ class OverviewFilterForm extends FormBase {
    * @param array $options
    */
   protected function buildEntitiesInContent(array &$content, array $entities, array $options) {
-    $entity_info = explode('.', $options['entity_bundle']);
-    $content['content'] = \Drupal::entityTypeManager()->getViewBuilder($entity_info[0])->viewMultiple($entities, $options['view_mode']);
+    $content['content'] = \Drupal::entityTypeManager()->getViewBuilder($this->overviewManager->getEntityTypeID($options['entity_bundle']))->viewMultiple($entities, $options['view_mode']);
   }
 
   /**
@@ -332,7 +334,6 @@ class OverviewFilterForm extends FormBase {
    */
   public function contentCallback($form, FormStateInterface $form_state) {
     $options = $this->optionsFromFormState($form_state);
-    $entity_info = explode('.', $options['entity_bundle']);
     $response = new AjaxResponse();
     $response->addCommand(new ReplaceCommand('.overview-form-contents', $form['content']));
     $url = Url::fromRoute('<current>');

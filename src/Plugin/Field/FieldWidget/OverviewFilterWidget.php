@@ -94,7 +94,7 @@ class OverviewFilterWidget extends WidgetBase {
       '#type' => 'select',
       '#title' => $this->t('Sort criteria'),
       '#description' => $this->t('What criteria to sort entities by.'),
-      '#options' => $this->overviewManager->getSortCriterias(),
+      '#options' => $this->overviewManager->getSortCriterias($entity_bundle),
       '#default_value' => $item->sort ?? 'newest',
     ];
 
