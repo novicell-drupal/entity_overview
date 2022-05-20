@@ -67,6 +67,7 @@ class OverviewFilterForm extends FormBase {
     $form['#attached']['library'] = array_merge($form['#attached']['library'] ?? [], ['html5history/html5history.ajax']);
     if (!empty($this->overviewManager->getEntityTypeID($entity_bundle))) {
       $form['#cache']['tags'][] = $this->overviewManager->getEntityTypeID($entity_bundle) . '_list';
+      $form['#cache']['context'][] = 'url.query_args';
     }
 
     $values['page'] = 0;
