@@ -13,6 +13,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *  id = "entity_query",
  *  title = "Entity Query",
  *  facets = {
+ *    "owner",
  *    "count",
  *    "sort"
  *  },
@@ -55,7 +56,11 @@ class EntityQueryEngine extends EngineBase {
         $query->condition($field_name, $value);
       }
     }
+    if (!empty($filter['owner'])) {
+      $query->condition($keys['owner'], $filter['owner']);
+    }
     if ($filter['pagination']) {
+      // Do not use dependency injection for the request, or it will be serialized with the form state
       \Drupal::requestStack()->getCurrentRequest()->query->set('page', $page);
       $query->pager($filter['count']);
     } elseif (isset($filter['count']) && $filter['count'] > 0) {

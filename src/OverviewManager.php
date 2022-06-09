@@ -7,9 +7,8 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\Core\Pager\Pager;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
-use Drupal\node\Entity\Node;
 
 class OverviewManager {
 
@@ -270,6 +269,14 @@ class OverviewManager {
    */
   public function getEntitiesTotal($entity_bundle, array $filter = [], $shown = 0) {
     return $this->getEngine($entity_bundle)->getEntitiesTotal($entity_bundle, $filter, $shown);
+  }
+
+  public function getBaseFacets($entity_bundle): array {
+    return $this->getEngine($entity_bundle)->getBaseFacets($entity_bundle);
+  }
+
+  public function getBaseFacetForm($entity_bundle, $facet, FormStateInterface $form_state): array {
+    return $this->getEngine($entity_bundle)->getBaseFacetForm($entity_bundle, $facet, $form_state);
   }
 
 }

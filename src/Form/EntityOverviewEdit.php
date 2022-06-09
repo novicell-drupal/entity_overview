@@ -99,7 +99,7 @@ class EntityOverviewEdit extends FormBase {
     $options = [];
     foreach ($definitions as $field_name => $definition) {
       // TODO: Support more entity types than taxonomy
-      if ($definition->getType() == 'entity_reference' && in_array($definition->getSetting('target_type'), ['taxonomy_term'/*, 'user', 'media'*/])) {
+      if ($definition->getType() == 'entity_reference' && in_array($definition->getSetting('target_type'), ['taxonomy_term', /*'user', 'media'*/])) {
         $options[$field_name] = $definition->getLabel();
       }
     }

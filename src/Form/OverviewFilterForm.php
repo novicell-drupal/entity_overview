@@ -143,22 +143,12 @@ class OverviewFilterForm extends FormBase {
       }
     }
 
-    if (in_array('count', $options['facets'])) {
-      $form['facets']['count'] = [
-        '#type' => 'select',
-        '#options' => $this->overviewManager->getCountOptions(),
-        '#default_value' => empty($form_state->get('count')) ? 5 : $form_state->get('count'),
-        '#ajax' => $ajax
-      ];
-    }
-
-    if (in_array('sort', $options['facets'])) {
-      $form['facets']['sort'] = [
-        '#type' => 'select',
-        '#options' => $this->overviewManager->getSortCriterias($entity_bundle),
-        '#default_value' => empty($form_state->get('sort')) ? 'newest' : $form_state->get('sort'),
-        '#ajax' => $ajax
-      ];
+    $base_facets = $this->overviewManager->getBaseFacets($entity_bundle);
+    foreach ($base_facets as $id => $label) {
+      if (in_array($id, $options['facets'])) {
+        $form['facets'][$id] = $this->overviewManager->getBaseFacetForm($entity_bundle, $id, $form_state);
+        $form['facets'][$id]['#ajax'] = $ajax;
+      }
     }
 
     if (!empty($form['facets'])) {
@@ -244,13 +234,14 @@ class OverviewFilterForm extends FormBase {
     $options = [
       'entity_bundle' => $form_state->get('entity_bundle'),
       'fields' => $form_state->get('fields'),
-      'count' => $form_state->getValue('count') ?? $form_state->get('count'),
       'view_mode' => $form_state->get('view_mode'),
       'pagination' => $form_state->get('pagination'),
-      'sort' => $form_state->getValue('sort') ?? $form_state->get('sort'),
       'show_total' => $form_state->get('show_total') ?? $this->overviewManager->getShowTotal($entity_bundle),
       'page' => $form_state->getValue('page') ?? $form_state->get('page') ?? 0
     ];
+    foreach ($this->overviewManager->getBaseFacets($entity_bundle) as $facet => $label) {
+      $options[$facet] = $form_state->getValue($facet) ?? $form_state->get($facet);
+    }
     $this->request->query->set('page', $options['page']);
     foreach ($options['fields'] as $key => $value) {
       if ($form_state->hasValue($key)) {

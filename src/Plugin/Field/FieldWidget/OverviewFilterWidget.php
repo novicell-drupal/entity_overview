@@ -99,12 +99,10 @@ class OverviewFilterWidget extends WidgetBase {
     ];
 
     if ($this->getFieldSetting('allow_facets')) {
-      $filter_options = [];
+      $filter_options = $this->overviewManager->getBaseFacets($entity_bundle);
       foreach ($fields as $field_name => $form_element) {
         $filter_options[$field_name] = $form_element['label'];
       }
-      $filter_options['count'] = $this->t('Page size select');
-      $filter_options['sort'] = $this->t('Sort select');
       if (!empty($filter_options)) {
         $element['facets'] = [
           '#type' => 'checkboxes',
