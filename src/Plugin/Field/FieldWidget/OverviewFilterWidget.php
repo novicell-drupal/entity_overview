@@ -83,23 +83,23 @@ class OverviewFilterWidget extends WidgetBase {
       ];
     }
 
-    $element['count'] = [
-      '#type' => 'number',
-      '#title' => $this->t('Count'),
-      '#description' => $this->t('How many entities to show at once.'),
-      '#default_value' => $item->count ?? 5,
-    ];
-
-    $element['sort'] = [
-      '#type' => 'select',
-      '#title' => $this->t('Sort criteria'),
-      '#description' => $this->t('What criteria to sort entities by.'),
-      '#options' => $this->overviewManager->getSortCriterias($entity_bundle),
-      '#default_value' => $item->sort ?? 'newest',
-    ];
+    $base_facets = $this->overviewManager->getBaseFacets($entity_bundle);
+    foreach ($base_facets as $id => $label) {
+      switch($id) {
+        case 'count':
+        case 'sort':
+          $form[$id] = $this->overviewManager->getBaseFacetForm($entity_bundle, $id, $form_state);
+          $form[$id]['#title'] = $label;
+          break;
+        default:
+          $form['fields'][$id] = $this->overviewManager->getBaseFacetForm($entity_bundle, $id, $form_state);
+          $form['fields'][$id]['#title'] = $label;
+          break;
+      }
+    }
 
     if ($this->getFieldSetting('allow_facets')) {
-      $filter_options = $this->overviewManager->getBaseFacets($entity_bundle);
+      $filter_options = $base_facets;
       foreach ($fields as $field_name => $form_element) {
         $filter_options[$field_name] = $form_element['label'];
       }
