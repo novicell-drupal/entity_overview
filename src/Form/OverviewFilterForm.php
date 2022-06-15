@@ -64,11 +64,10 @@ class OverviewFilterForm extends FormBase {
     $entity_bundle = $options['entity_bundle'];
 
     $form['#attributes']['class'][] = 'overview-form';
-    $form['#attached']['library'] = array_merge($form['#attached']['library'] ?? [], ['html5history/html5history.ajax']);
-    if (!empty($this->overviewManager->getEntityTypeID($entity_bundle))) {
-      $form['#cache']['tags'][] = $this->overviewManager->getEntityTypeID($entity_bundle) . '_list';
-      $form['#cache']['context'][] = 'url.query_args';
+    if ($this->overviewManager->deepLinksEnabled()) {
+      $form['#attached']['library'] = array_merge($form['#attached']['library'] ?? [], ['html5history/html5history.ajax']);
     }
+    $this->overviewManager->getCacheableMetadata($entity_bundle, !empty($options['facets']))->applyTo($form);
 
     $values['page'] = 0;
     unset($values['facets']);

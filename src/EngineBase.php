@@ -3,7 +3,9 @@
 namespace Drupal\entity_overview;
 
 use Drupal\Component\Plugin\PluginBase;
+use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\PageCache\ResponsePolicy\KillSwitch;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -17,13 +19,33 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
    */
   protected $overviewManager;
 
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, OverviewManager $overviewManager) {
+  /**
+   * @var \Drupal\Core\PageCache\ResponsePolicy\KillSwitch
+   */
+  protected $killSwitch;
+
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, OverviewManager $overviewManager, KillSwitch $killSwitch) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->overviewManager = $overviewManager;
+    $this->killSwitch = $killSwitch;
   }
 
   static public function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
-    return new static($configuration, $plugin_id, $plugin_definition, $container->get('entity_overview.manager'));
+    return new static($configuration, $plugin_id, $plugin_definition, $container->get('entity_overview.manager'), $container->get('page_cache_kill_switch'));
+  }
+
+  public function getCacheableMetadata($entity_bundle, bool $has_facets): CacheableMetadata {
+    $cache = new CacheableMetadata();
+    if ($has_facets) {
+      if ($this->overviewManager->deepLinksEnabled()) {
+        $cache->addCacheContexts(['url.query_args']);
+        $this->killSwitch->trigger();
+      }
+    }
+    if (!empty($this->overviewManager->getEntityTypeID($entity_bundle))) {
+      $cache->addCacheTags([$this->overviewManager->getEntityTypeID($entity_bundle) . '_list']);
+    }
+    return $cache;
   }
 
   public function getBaseFacets($entity_bundle): array {

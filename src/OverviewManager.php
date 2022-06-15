@@ -1,6 +1,7 @@
 <?php
 namespace Drupal\entity_overview;
 
+use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\Core\Entity\EntityInterface;
@@ -271,12 +272,26 @@ class OverviewManager {
     return $this->getEngine($entity_bundle)->getEntitiesTotal($entity_bundle, $filter, $shown);
   }
 
+  /**
+   * Whether deeplinks are enabled on the site.
+   *
+   * @return bool
+   */
+  public function deepLinksEnabled() {
+    // TODO: Make deeplink functionality optional
+    return TRUE;
+  }
+
   public function getBaseFacets($entity_bundle): array {
     return $this->getEngine($entity_bundle)->getBaseFacets($entity_bundle);
   }
 
   public function getBaseFacetForm($entity_bundle, $facet, FormStateInterface $form_state): array {
     return $this->getEngine($entity_bundle)->getBaseFacetForm($entity_bundle, $facet, $form_state);
+  }
+
+  public function getCacheableMetadata($entity_bundle, bool $has_facets): CacheableMetadata {
+    return $this->getEngine($entity_bundle)->getCacheableMetadata($entity_bundle, $has_facets);
   }
 
 }
