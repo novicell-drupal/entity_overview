@@ -4,6 +4,7 @@ namespace Drupal\entity_overview\Plugin\EntityOverview\Engine;
 
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\PageCache\ResponsePolicy\KillSwitch;
 use Drupal\entity_overview\EngineBase;
 use Drupal\entity_overview\OverviewManager;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -27,8 +28,8 @@ class EntityQueryEngine extends EngineBase {
    */
   protected EntityTypeManagerInterface $entityTypeManager;
 
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, OverviewManager $overviewManager, EntityTypeManagerInterface $entityTypeManager) {
-    parent::__construct($configuration, $plugin_id, $plugin_definition, $overviewManager);
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, OverviewManager $overviewManager, KillSwitch $killSwitch, EntityTypeManagerInterface $entityTypeManager) {
+    parent::__construct($configuration, $plugin_id, $plugin_definition, $overviewManager, $killSwitch);
     $this->entityTypeManager = $entityTypeManager;
 
   }
@@ -36,6 +37,7 @@ class EntityQueryEngine extends EngineBase {
   static public function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     return new static($configuration, $plugin_id, $plugin_definition,
       $container->get('entity_overview.manager'),
+      $container->get('page_cache_kill_switch'),
       $container->get('entity_type.manager')
     );
   }
