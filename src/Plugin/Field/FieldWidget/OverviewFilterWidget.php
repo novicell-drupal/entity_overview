@@ -88,12 +88,12 @@ class OverviewFilterWidget extends WidgetBase {
       switch($id) {
         case 'count':
         case 'sort':
-          $form[$id] = $this->overviewManager->getBaseFacetForm($entity_bundle, $id, $form_state);
-          $form[$id]['#title'] = $label;
+          $element[$id] = $this->overviewManager->getBaseFacetForm($entity_bundle, $id, $form_state);
+          $element[$id]['#title'] = $label;
           break;
         default:
-          $form['fields'][$id] = $this->overviewManager->getBaseFacetForm($entity_bundle, $id, $form_state);
-          $form['fields'][$id]['#title'] = $label;
+          $element['fields'][$id] = $this->overviewManager->getBaseFacetForm($entity_bundle, $id, $form_state);
+          $element['fields'][$id]['#title'] = $label;
           break;
       }
     }
