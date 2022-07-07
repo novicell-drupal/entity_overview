@@ -286,8 +286,8 @@ class OverviewManager {
     return $this->getEngine($entity_bundle)->getBaseFacets($entity_bundle);
   }
 
-  public function getBaseFacetForm($entity_bundle, $facet, FormStateInterface $form_state): array {
-    return $this->getEngine($entity_bundle)->getBaseFacetForm($entity_bundle, $facet, $form_state);
+  public function getBaseFacetForm($entity_bundle, $facet, $default_value): array {
+    return $this->getEngine($entity_bundle)->getBaseFacetForm($entity_bundle, $facet, $default_value);
   }
 
   public function getCacheableMetadata($entity_bundle, bool $has_facets): CacheableMetadata {

@@ -73,7 +73,6 @@ class OverviewFilterWidget extends WidgetBase {
     }
 
     foreach ($fields as $field_name => $form_element) {
-
       $element['fields'][$field_name] = [
         '#type' => $form_element['form_element'],
         '#title' => $form_element['label'],
@@ -88,11 +87,11 @@ class OverviewFilterWidget extends WidgetBase {
       switch($id) {
         case 'count':
         case 'sort':
-          $element[$id] = $this->overviewManager->getBaseFacetForm($entity_bundle, $id, $form_state);
+          $element[$id] = $this->overviewManager->getBaseFacetForm($entity_bundle, $id, $item->getValue()[$id] ?? NULL);
           $element[$id]['#title'] = $label;
           break;
         default:
-          $element['fields'][$id] = $this->overviewManager->getBaseFacetForm($entity_bundle, $id, $form_state);
+          $element['fields'][$id] = $this->overviewManager->getBaseFacetForm($entity_bundle, $id, $item->getValue()['fields'][$id] ?? NULL);
           $element['fields'][$id]['#title'] = $label;
           break;
       }
@@ -170,6 +169,8 @@ class OverviewFilterWidget extends WidgetBase {
           }
         }
         $values['fields'][$field_name] = $result;
+      } elseif (is_null($selections)) {
+        $values['fields'][$field_name] = '';
       }
     }
     $values['pagination'] = boolval($values['pagination']);

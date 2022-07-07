@@ -13,7 +13,7 @@ interface EngineInterface extends PluginInspectionInterface, DerivativeInspectio
 
   public function getBaseFacets($entity_bundle): array;
 
-  public function getBaseFacetForm($entity_bundle, $facet, FormStateInterface $form_state): array;
+  public function getBaseFacetForm($entity_bundle, $facet, $default_value): array;
 
   public function getResult($entity_bundle, array $filter = [], $page = 0);
 

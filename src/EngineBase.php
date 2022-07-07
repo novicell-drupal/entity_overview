@@ -53,46 +53,50 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
     if (in_array('text', $this->getPluginDefinition()['facets'])) {
       $facets['text'] = $this->t('Text');
     }
+    if (in_array('owner', $this->getPluginDefinition()['facets'])) {
+      $facets['owner'] = $this->t('Author');
+    }
     if (in_array('sort', $this->getPluginDefinition()['facets'])) {
       $facets['sort'] = $this->t('Sort select');
     }
     if (in_array('count', $this->getPluginDefinition()['facets'])) {
       $facets['count'] = $this->t('Page size select');
     }
-    if (in_array('owner', $this->getPluginDefinition()['facets'])) {
-      $facets['owner'] = $this->t('Author');
-    }
     return $facets;
   }
 
-  public function getBaseFacetForm($entity_bundle, $facet, FormStateInterface $form_state): array {
+  public function getBaseFacetForm($entity_bundle, $facet, $default_value): array {
     $form = [];
     switch ($facet) {
       case 'text':
         $form = [
           '#type' => 'textfield',
-          '#default_value' => empty($form_state->get('text')) ? '' : $form_state->get('text'),
+          '#default_value' => $default_value ?? ''
         ];
         break;
       case 'sort':
         $form = [
           '#type' => 'select',
           '#options' => $this->getSortCriterias(),
-          '#default_value' => empty($form_state->get('sort')) ? 'newest' : $form_state->get('sort'),
+          '#default_value' => $default_value ?? 'newest'
         ];
         break;
       case 'count':
         $form = [
           '#type' => 'select',
           '#options' => $this->overviewManager->getCountOptions(),
-          '#default_value' => empty($form_state->get('count')) ? 5 : $form_state->get('count')
+          '#default_value' => $default_value ?? 5
         ];
         break;
       case 'owner':
+        $user = NULL;
+        if (!empty($default_value)) {
+          $user = \Drupal::entityTypeManager()->getStorage('user')->load($default_value);
+        }
         $form = [
           '#type' => 'entity_autocomplete',
           '#target_type' => 'user',
-          '#default_value' => empty($form_state->get('owner')) ? NULL : $form_state->get('owner')
+          '#default_value' => $user
         ];
         break;
     }
