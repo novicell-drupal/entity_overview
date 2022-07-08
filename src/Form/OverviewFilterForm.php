@@ -145,8 +145,17 @@ class OverviewFilterForm extends FormBase {
     $base_facets = $this->overviewManager->getBaseFacets($entity_bundle);
     foreach ($base_facets as $id => $label) {
       if (in_array($id, $options['facets'])) {
-        $form['facets'][$id] = $this->overviewManager->getBaseFacetForm($entity_bundle, $id, $form_state);
-        $form['facets'][$id]['#ajax'] = $ajax;
+        switch($id) {
+          case 'count':
+          case 'sort':
+            $form['facets'][$id] = $this->overviewManager->getBaseFacetForm($entity_bundle, $id, $form_state->get($id));
+            $form['facets'][$id]['#ajax'] = $ajax;
+            break;
+          default:
+            $form['facets'][$id] = $this->overviewManager->getBaseFacetForm($entity_bundle, $id, $form_state->get(['fields', $id]));
+            $form['facets'][$id]['#ajax'] = $ajax;
+            break;
+        }
       }
     }
 
