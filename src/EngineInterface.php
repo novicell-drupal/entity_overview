@@ -9,17 +9,19 @@ use Drupal\Core\Form\FormStateInterface;
 
 interface EngineInterface extends PluginInspectionInterface, DerivativeInspectionInterface {
 
-  public function getCacheableMetadata($entity_bundle, bool $has_facets): CacheableMetadata;
+  public function label(): string;
 
-  public function getBaseFacets($entity_bundle): array;
+  public function supportsMultipleEntities(): bool;
 
   public function getBaseFacetForm($entity_bundle, $facet, $default_value): array;
 
-  public function getResult($entity_bundle, array $filter = [], $page = 0);
+  public function getBaseFacets($overview_id): array;
 
-  public function getEntities($entity_bundle, array $filter = [], $page = 0);
+  public function getResult($overview_id, array $filter = [], $page = 0);
 
-  public function getEntitiesTotal($entity_bundle, array $filter = [], $shown = 0);
+  public function getEntities($overview_id, array $filter = [], $page = 0);
+
+  public function getEntitiesTotal($overview_id, array $filter = [], $shown = 0);
 
   public function getSortCriterias();
 

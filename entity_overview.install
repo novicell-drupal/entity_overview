@@ -21,3 +21,24 @@ function entity_overview_update_9001() {
     }
   }
 }
+
+/**
+ * Update configurations to support multiple entity types
+ */
+function entity_overview_update_9003() {
+  $config_factory = \Drupal::configFactory();
+  /** @var EntityTypeBundleInfoInterface $entityTypeBundleInfo */
+  $entityTypeBundleInfo = \Drupal::service('entity_type.bundle.info');
+  $list = $config_factory->listAll('entity_overview.');
+  foreach ($list as $config_id) {
+    $config = $config_factory->getEditable($config_id);
+    if (!$config->isNew() && !empty($config->get('entity_type_id')) && !empty($config->get('bundle'))) {
+      $bundle_info = $entityTypeBundleInfo->getBundleInfo($config->get('entity_type_id'));
+      $config->set('label', $bundle_info[$config->get('bundle')]['label']);
+      $config->set('entity_bundles', [$config->get('entity_type_id') => [$config->get('bundle')]]);
+      $config->clear('entity_type_id');
+      $config->clear('bundle');
+      $config->save();
+    }
+  }
+}

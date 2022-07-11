@@ -61,13 +61,13 @@ class OverviewFilterForm extends FormBase {
   public function buildForm(array $form, FormStateInterface $form_state, array $options = []) {
     $this->options = $options;
     $values = $this->options;
-    $entity_bundle = $options['entity_bundle'];
+    $overview_id = $options['overview'] ?? $options['entity_bundle'];
 
     $form['#attributes']['class'][] = 'overview-form';
     if ($this->overviewManager->deepLinksEnabled()) {
       $form['#attached']['library'] = array_merge($form['#attached']['library'] ?? [], ['html5history/html5history.ajax']);
     }
-    $this->overviewManager->getCacheableMetadata($entity_bundle, !empty($options['facets']))->applyTo($form);
+    $this->overviewManager->getCacheableMetadata($overview_id, !empty($options['facets']))->applyTo($form);
 
     $values['page'] = 0;
     unset($values['facets']);
@@ -127,7 +127,7 @@ class OverviewFilterForm extends FormBase {
       ],
     ];
     $form['facets'] = [];
-    $fields = $this->overviewManager->getFieldFormElements($options['entity_bundle']);
+    $fields = $this->overviewManager->getFieldFormElements($overview_id);
     foreach ($fields as $field_name => $form_element) {
       if (in_array($field_name, $options['facets'])) {
         $form['facets'][$field_name] = [
@@ -142,17 +142,17 @@ class OverviewFilterForm extends FormBase {
       }
     }
 
-    $base_facets = $this->overviewManager->getBaseFacets($entity_bundle);
+    $base_facets = $this->overviewManager->getBaseFacets($overview_id);
     foreach ($base_facets as $id => $label) {
       if (in_array($id, $options['facets'])) {
         switch($id) {
           case 'count':
           case 'sort':
-            $form['facets'][$id] = $this->overviewManager->getBaseFacetForm($entity_bundle, $id, $form_state->get($id));
+            $form['facets'][$id] = $this->overviewManager->getBaseFacetForm($overview_id, $id, $form_state->get($id));
             $form['facets'][$id]['#ajax'] = $ajax;
             break;
           default:
-            $form['facets'][$id] = $this->overviewManager->getBaseFacetForm($entity_bundle, $id, $form_state->get(['fields', $id]));
+            $form['facets'][$id] = $this->overviewManager->getBaseFacetForm($overview_id, $id, $form_state->get(['fields', $id]));
             $form['facets'][$id]['#ajax'] = $ajax;
             break;
         }
@@ -199,11 +199,11 @@ class OverviewFilterForm extends FormBase {
    */
   public function buildContents(FormStateInterface $form_state) {
     $options = $this->optionsFromFormState($form_state);
-    $entity_bundle = $form_state->get('entity_bundle') ?? 'node.page';
+    $overview_id = $form_state->get('entity_bundle') ?? 'node.page';
     $page = $options['page'];
 
     if (!$this->request->isXmlHttpRequest() || $form_state->isRebuilding()) {
-      $entities = $this->getEntitiesForBuilding($entity_bundle, $options, $page);
+      $entities = $this->getEntitiesForBuilding($overview_id, $options, $page);
     } else {
       $entities = [];
     }
@@ -218,7 +218,7 @@ class OverviewFilterForm extends FormBase {
 
     if (!empty($options['show_total'])) {
       $content['total'] = [
-        '#markup' => $this->getEntitiesTotal($entity_bundle, $options, count($entities))
+        '#markup' => $this->getEntitiesTotal($overview_id, $options, count($entities))
       ];
     }
 
@@ -238,16 +238,16 @@ class OverviewFilterForm extends FormBase {
    * @return array
    */
   protected function optionsFromFormState(FormStateInterface $form_state) {
-    $entity_bundle = $form_state->get('entity_bundle');
+    $overview_id = $form_state->get('entity_bundle');
     $options = [
       'entity_bundle' => $form_state->get('entity_bundle'),
       'fields' => $form_state->get('fields'),
       'view_mode' => $form_state->get('view_mode'),
       'pagination' => $form_state->get('pagination'),
-      'show_total' => $form_state->get('show_total') ?? $this->overviewManager->getShowTotal($entity_bundle),
+      'show_total' => $form_state->get('show_total') ?? $this->overviewManager->getShowTotal($overview_id),
       'page' => $form_state->getValue('page') ?? $form_state->get('page') ?? 0
     ];
-    foreach ($this->overviewManager->getBaseFacets($entity_bundle) as $facet => $label) {
+    foreach ($this->overviewManager->getBaseFacets($overview_id) as $facet => $label) {
       $options[$facet] = $form_state->getValue($facet) ?? $form_state->get($facet);
     }
     $this->request->query->set('page', $options['page']);
@@ -272,27 +272,27 @@ class OverviewFilterForm extends FormBase {
   /**
    * Function for retrieving the entities to be displayed. Overwrite for when a custom query is necessary.
    *
-   * @param string $entity_bundle
+   * @param string $overview_id
    * @param array $options
    * @param int $page
    *
    * @return \Drupal\Core\Entity\EntityInterface[]
    */
-  protected function getEntitiesForBuilding($entity_bundle, array $options, $page = 0) {
-    return $this->overviewManager->getEntities($entity_bundle, $options, $page);
+  protected function getEntitiesForBuilding($overview_id, array $options, $page = 0) {
+    return $this->overviewManager->getEntities($overview_id, $options, $page);
   }
 
   /**
    * Function for getting total number of entities. Overwrite for when a custom query is necessary.
    *
-   * @param string $entity_bundle
+   * @param string $overview_id
    * @param array $options
    * @param int $shown
    *
    * @return \Drupal\Core\StringTranslation\TranslatableMarkup
    */
-  protected function getEntitiesTotal($entity_bundle, array $options, $shown) {
-    return $this->overviewManager->getEntitiesTotal($entity_bundle, $options, $shown);
+  protected function getEntitiesTotal($overview_id, array $options, $shown) {
+    return $this->overviewManager->getEntitiesTotal($overview_id, $options, $shown);
   }
 
   /**
@@ -303,7 +303,7 @@ class OverviewFilterForm extends FormBase {
    * @param array $options
    */
   protected function buildEntitiesInContent(array &$content, array $entities, array $options) {
-    $content['content'] = \Drupal::entityTypeManager()->getViewBuilder($this->overviewManager->getEntityTypeID($options['entity_bundle']))->viewMultiple($entities, $options['view_mode']);
+    $content['content'] = $this->overviewManager->buildEntitiesWithViewmode($entities, $options['view_mode']);
   }
 
   /**

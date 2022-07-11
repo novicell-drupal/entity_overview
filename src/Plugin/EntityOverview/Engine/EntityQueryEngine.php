@@ -18,7 +18,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *    "count",
  *    "sort"
  *  },
- *  global = false
+ *  multiple = false
  * )
  */
 class EntityQueryEngine extends EngineBase {
@@ -42,11 +42,14 @@ class EntityQueryEngine extends EngineBase {
     );
   }
 
-  public function getResult($entity_bundle, array $filter = [], $page = 0) {
-    $storage = $this->entityTypeManager->getStorage($this->overviewManager->getEntityTypeID($entity_bundle));
-    $keys = $this->entityTypeManager->getDefinition($this->overviewManager->getEntityTypeID($entity_bundle))->getKeys();
+  /**
+   * @inheritDoc
+   */
+  public function getResult($overview_id, array $filter = [], $page = 0) {
+    $storage = $this->entityTypeManager->getStorage($this->getEntityTypeID($overview_id));
+    $keys = $this->entityTypeManager->getDefinition($this->getEntityTypeID($overview_id))->getKeys();
     $query = $storage->getQuery()
-      ->condition($keys['bundle'], $this->overviewManager->getBundle($entity_bundle))
+      ->condition($keys['bundle'], $this->getBundle($overview_id))
       ->condition('status', 1);
     foreach ($filter['fields'] as $field_name => $value) {
       if (empty($value)) {
@@ -73,37 +76,46 @@ class EntityQueryEngine extends EngineBase {
         $query->sort($keys['label'], 'ASC');
         break;
       case 'oldest':
-        $query->sort($this->overviewManager->getSortField($entity_bundle), 'ASC');
+        $query->sort($this->overviewManager->getSortField($overview_id), 'ASC');
         break;
       default:
-        $query->sort($this->overviewManager->getSortField($entity_bundle), 'DESC');
+        $query->sort($this->overviewManager->getSortField($overview_id), 'DESC');
         break;
     }
 
     return $query->execute();
   }
 
-  public function getEntities($entity_bundle, array $filter = [], $page = 0) {
-    $storage = $this->entityTypeManager->getStorage($this->overviewManager->getEntityTypeID($entity_bundle));
-    $ids = $this->getResult($entity_bundle, $filter, $page);
+  /**
+   * @inheritDoc
+   */
+  public function getEntities($overview_id, array $filter = [], $page = 0) {
+    if (empty($this->getEntityTypeID($overview_id))) {
+      return [];
+    }
+    $storage = $this->entityTypeManager->getStorage($this->getEntityTypeID($overview_id));
+    $ids = $this->getResult($overview_id, $filter, $page);
     return $storage->loadMultiple($ids);
   }
 
-  public function getEntitiesTotal($entity_bundle, array $filter = [], $shown = 0) {
-    $keys = $this->entityTypeManager->getDefinition($this->overviewManager->getEntityTypeID($entity_bundle))->getKeys();
+  /**
+   * @inheritDoc
+   */
+  public function getEntitiesTotal($overview_id, array $filter = [], $shown = 0) {
+    $keys = $this->entityTypeManager->getDefinition($this->getEntityTypeID($overview_id))->getKeys();
     $count = 0;
     $total = 0;
     switch ($filter['show_total']) {
       case 'filtered':
-        $query = $this->entityTypeManager->getStorage($this->overviewManager->getEntityTypeID($entity_bundle))->getQuery()
-          ->condition($keys['bundle'], $this->overviewManager->getBundle($entity_bundle))
+        $query = $this->entityTypeManager->getStorage($this->getEntityTypeID($overview_id))->getQuery()
+          ->condition($keys['bundle'], $this->getBundle($overview_id))
           ->condition('status', 1)
           ->count();
-        $cid = 'entity_overview:' . $entity_bundle . '_total';
+        $cid = 'entity_overview:' . $overview_id . '_total';
         $cache = \Drupal::cache()->get($cid);
         if ($cache === FALSE) {
           $total = $query->execute();
-          \Drupal::cache()->set($cid, $total, Cache::PERMANENT, [$this->overviewManager->getEntityTypeID($entity_bundle) . '_list']);
+          \Drupal::cache()->set($cid, $total, Cache::PERMANENT, [$this->getEntityTypeID($overview_id) . '_list']);
         } else {
           $total = $cache->data;
         }
@@ -121,8 +133,8 @@ class EntityQueryEngine extends EngineBase {
         break;
       case 'shown':
         $count = $shown;
-        $query = $this->entityTypeManager->getStorage($this->overviewManager->getEntityTypeID($entity_bundle))->getQuery()
-          ->condition($keys['bundle'], $this->overviewManager->getBundle($entity_bundle))
+        $query = $this->entityTypeManager->getStorage($this->getEntityTypeID($overview_id))->getQuery()
+          ->condition($keys['bundle'], $this->getBundle($overview_id))
           ->condition('status', 1)
           ->count();
         foreach ($filter['fields'] as $field_name => $value) {
@@ -141,6 +153,9 @@ class EntityQueryEngine extends EngineBase {
     return $this->t('Showing @count out of @total', ['@count' => $count, '@total' => $total]);
   }
 
+  /**
+   * @inheritDoc
+   */
   public function getSortCriterias() {
     return [
       'newest' => t('Newest first'),
@@ -149,12 +164,38 @@ class EntityQueryEngine extends EngineBase {
     ];
   }
 
+  /**
+   * @inheritDoc
+   */
   public function getShowTotalOptions() {
     return [
       '' => t('None'),
       'filtered' => t('Filtered out of total number of items'),
       'shown' => t('Shown items out of filtered number of items'),
     ];
+  }
+
+  /**
+   * Get the Entity Type ID used for the overview.
+   *
+   * @param string $overview_id
+   *
+   * @return string|null
+   */
+  protected function getEntityTypeID($overview_id) {
+    return array_key_first($this->overviewManager->getEntityTypesAndBundles($overview_id));
+  }
+
+  /**
+   * Get the bundle ID used for the overview.
+   *
+   * @param string $overview_id
+   *
+   * @return string|null
+   */
+  protected function getBundle($overview_id) {
+    $entity_types = $this->overviewManager->getEntityTypesAndBundles($overview_id);
+    return reset($entity_types[$this->getEntityTypeID($overview_id)]);
   }
 
 }
