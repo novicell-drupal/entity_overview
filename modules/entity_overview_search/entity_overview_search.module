@@ -1,0 +1,10 @@
+<?php
+
+/**
+ * Implements hook_locale_translation_projects_alter().
+ */
+function entity_overview_search_locale_translation_projects_alter(&$projects) {
+  $module_handler = \Drupal::service('module_handler');
+  $path = $module_handler->getModule('entity_overview_search')->getPath();
+  $projects['entity_overview_search']['info']['interface translation server pattern'] = $path.'/translations/%language.po';
+}

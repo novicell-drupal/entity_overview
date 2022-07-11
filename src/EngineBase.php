@@ -34,7 +34,15 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
     return new static($configuration, $plugin_id, $plugin_definition, $container->get('entity_overview.manager'), $container->get('page_cache_kill_switch'));
   }
 
-  public function getCacheableMetadata($entity_bundle, bool $has_facets): CacheableMetadata {
+  public function label(): string {
+    return $this->t($this->pluginDefinition['title'] ?? 'Engine');
+  }
+
+  public function supportsMultipleEntities(): bool {
+    return $this->pluginDefinition['multiple'] ?? FALSE;
+  }
+
+  public function getCacheableMetadata($overview_id, bool $has_facets): CacheableMetadata {
     $cache = new CacheableMetadata();
     if ($has_facets) {
       if ($this->overviewManager->deepLinksEnabled()) {
@@ -42,16 +50,18 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
         $this->killSwitch->trigger();
       }
     }
-    if (!empty($this->overviewManager->getEntityTypeID($entity_bundle))) {
-      $cache->addCacheTags([$this->overviewManager->getEntityTypeID($entity_bundle) . '_list']);
+    $tags = [];
+    foreach ($this->overviewManager->getEntityTypesAndBundles($overview_id) as $entity_type_id => $bundles) {
+      $tags[] = $entity_type_id . '_list';
     }
+    $cache->addCacheTags($tags);
     return $cache;
   }
 
-  public function getBaseFacets($entity_bundle): array {
+  public function getBaseFacets($overview_id): array {
     $facets = [];
     if (in_array('text', $this->getPluginDefinition()['facets'])) {
-      $facets['text'] = $this->t('Text');
+      $facets['text'] = $this->t('Search keywords');
     }
     if (in_array('owner', $this->getPluginDefinition()['facets'])) {
       $facets['owner'] = $this->t('Author');

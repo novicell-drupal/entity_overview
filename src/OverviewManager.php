@@ -8,6 +8,7 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Extension\ModuleHandler;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
@@ -64,54 +65,78 @@ class OverviewManager {
   /**
    * @return array
    */
-  public function getEntityBundles() {
+  public function getOverviewConfigs() {
     $list = $this->configFactory->listAll('entity_overview.');
     $result = [];
     foreach ($list as $config_id) {
       $config = $this->configFactory->get($config_id);
-      $bundle_info = $this->entityTypeBundleInfo->getBundleInfo($config->get('entity_type_id'));
-      $result[$config->get('id')] = $bundle_info[$config->get('bundle')]['label'];
+      $result[$config->get('id')] = $config->get('label') ?? $config_id;
     }
     return $result;
   }
 
   /**
-   * @param string $entity_bundle
+   * @param string $overview_id
    *
    * @return array
+   * @deprecated Use getOverviewConfig() instead.
    */
   public function getEntityBundleConfig($entity_bundle) {
-    $configs = &drupal_static(__FUNCTION__, []);
-    if (!empty($configs[$entity_bundle])) {
-      return $configs[$entity_bundle];
-    }
-
-    $configs[$entity_bundle] = $this->configFactory->get('entity_overview.' . $entity_bundle)->getRawData();
-    return $configs[$entity_bundle];
+    return $this->getOverviewConfig($entity_bundle);
   }
 
   /**
-   * @param $entity_bundle
+   * @param string $overview_id
+   *
    * @return array
    */
-  public function getFieldFormElements($entity_bundle) {
-    // TODO: Get more information from field definitions and cache it
-    $fields = $this->getEntityBundleConfig($entity_bundle)['fields'];
-    $elements = [];
-    foreach ($fields as $field => $form_element) {
-      $elements[$field] = $this->getFieldFormElement($entity_bundle, $field, $form_element);
+  public function getOverviewConfig($overview_id) {
+    $configs = &drupal_static(__FUNCTION__, []);
+    if (!empty($configs[$overview_id])) {
+      return $configs[$overview_id];
     }
+
+    $configs[$overview_id] = $this->configFactory->get('entity_overview.' . $overview_id)->getRawData();
+    return $configs[$overview_id];
+  }
+
+  /**
+   * @param $overview_id
+   * @return array
+   */
+  public function getFieldFormElements($overview_id) {
+    // TODO: Get more information from field definitions and cache it
+    $config = $this->getOverviewConfig($overview_id);
+
+    $elements = [];
+    foreach ($config['entity_bundles'] as $entity_type_id => $bundle_ids) {
+      foreach ($bundle_ids as $bundle_id) {
+        /** @var \Drupal\Core\Entity\EntityFieldManagerInterface $entityFieldManager */
+        $definitions = $this->entityFieldManager->getFieldDefinitions($entity_type_id, $bundle_id);
+        foreach ($config['fields'] as $field_name => $element_type) {
+          if (!isset($elements[$field_name]) && !empty($definitions[$field_name])) {
+            $elements[$field_name] = $this->getFieldFormElement($definitions[$field_name], $element_type);
+          }
+        }
+      }
+    }
+
     return $elements;
   }
 
-  public function getFieldFormElement($entity_bundle, $field_name, $element_type) {
+  /**
+   * @param \Drupal\Core\Field\FieldDefinitionInterface $definition
+   * @param string $element_type
+   *
+   * @return array
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+   */
+  public function getFieldFormElement(FieldDefinitionInterface $definition, $element_type) {
     $element = [
       'form_element' => $element_type,
     ];
 
-    /** @var \Drupal\Core\Entity\EntityFieldManagerInterface $entityFieldManager */
-    $definitions = $this->entityFieldManager->getFieldDefinitions($this->getEntityTypeID($entity_bundle), $this->getBundle($entity_bundle));
-    $definition = $definitions[$field_name];
     switch ($definition->getType()) {
       case 'entity_reference':
         $settings = $definition->getSettings() ?? [];
@@ -148,6 +173,39 @@ class OverviewManager {
     return $element;
   }
 
+  /**
+   * Returns list of all entity types that is supported for overviews.
+   *
+   * @return array
+   */
+  public function getSupportedEntityTypes() {
+    $types = [];
+    $entity_types = $this->entityTypeManager->getDefinitions();
+    foreach ($entity_types as $entity_type) {
+      if (!$entity_type->hasViewBuilderClass() || !$entity_type->isCommonReferenceTarget() || !$entity_type->hasRouteProviders() || $entity_type->getBundleEntityType() == NULL) {
+        continue;
+      }
+
+      $bundles = [];
+      foreach ($this->entityTypeBundleInfo->getBundleInfo($entity_type->id()) as $bundle_id => $bundle) {
+        $bundles[$bundle_id] = [
+          'id' => $bundle_id,
+          'label' => $bundle['label']
+        ];
+      }
+
+      $types[$entity_type->id()] = [
+        'id' => $entity_type->id(),
+        'label' => $entity_type->getLabel(),
+        'bundles' => $bundles,
+      ];
+    }
+
+    return $types;
+  }
+
+  public function getCountOptions() {
+    return [
   public function getCountOptions($entity_bundle) {
     $options = [
       5 => '5',
@@ -166,8 +224,8 @@ class OverviewManager {
    *
    * @return array
    */
-  public function getSortCriterias($entity_bundle) {
-    return $this->getEngine($entity_bundle)->getSortCriterias();
+  public function getSortCriterias($overview_id) {
+    return $this->getEngine($overview_id)->getSortCriterias();
   }
 
   /**
@@ -180,106 +238,120 @@ class OverviewManager {
   }
 
   /**
-   * @param string $entity_bundle
+   * @param string $overview_id
    *
    * @return string
    */
-  public function getLabel($entity_bundle) {
-    $label = $this->getEntityBundleConfig($entity_bundle)['label'] ?? NULL;
-    if (empty($label)) {
-      if (empty($this->getEntityTypeID($entity_bundle))) {
-        return $entity_bundle;
-      } else {
-        $bundle_info = $this->entityTypeBundleInfo->getBundleInfo($this->getEntityTypeID($entity_bundle));
-        return $bundle_info[$this->getBundle($entity_bundle)]['label'];
-      }
-    } else {
-      return $label;
+  public function getLabel($overview_id) {
+    return $this->getOverviewConfig($overview_id)['label'] ?? $overview_id;
+  }
+
+  /**
+   * @param string $overview_id
+   *
+   * @return string|null
+   * @deprecated Use getEntityTypesAndBundles() instead
+   */
+  public function getEntityTypeID($overview_id) {
+    $entity_types = $this->getEntityTypesAndBundles($overview_id);
+    if (count($entity_types) !== 1) {
+      return NULL;
     }
+    $entity_type_id = array_key_first($entity_types);
+    if (count($entity_types[$entity_type_id]) !== 1) {
+      return NULL;
+    }
+    return $entity_type_id;
   }
 
   /**
-   * @param string $entity_bundle
+   * @param string $overview_id
    *
    * @return string|null
+   * @deprecated Use getEntityTypesAndBundles() instead
    */
-  public function getEntityTypeID($entity_bundle) {
-    return $this->getEntityBundleConfig($entity_bundle)['entity_type_id'] ?? NULL;
+  public function getBundle($overview_id) {
+    $entity_type_id = $this->getEntityTypeID($overview_id);
+    if (empty($entity_type_id)) {
+      return NULL;
+    }
+    $entity_types = $this->getEntityTypesAndBundles($overview_id);
+    return reset($entity_types[$entity_type_id]) ?? NULL;
   }
 
   /**
-   * @param string $entity_bundle
+   * @param string $overview_id
    *
-   * @return string|null
+   * @return array
    */
-  public function getBundle($entity_bundle) {
-    return $this->getEntityBundleConfig($entity_bundle)['bundle'] ?? NULL;
+  public function getEntityTypesAndBundles($overview_id) {
+    return $this->getOverviewConfig($overview_id)['entity_bundles'] ?? [];
   }
 
   /**
-   * @param string $entity_bundle
+   * @param string $overview_id
    *
    * @return string
    */
-  public function getSortField($entity_bundle) {
-    return $this->getEntityBundleConfig($entity_bundle)['sort_field'] ?? 'field_list_date';
+  public function getSortField($overview_id) {
+    return $this->getOverviewConfig($overview_id)['sort_field'] ?? 'created';
   }
 
   /**
-   * @param string $entity_bundle
+   * @param string $overview_id
    *
    * @return string
    */
-  public function getShowTotal($entity_bundle) {
-    return $this->getEntityBundleConfig($entity_bundle)['show_total'] ?? '';
+  public function getShowTotal($overview_id) {
+    return $this->getOverviewConfig($overview_id)['show_total'] ?? '';
   }
 
   /**
-   * @param $entity_bundle
+   * @param $overview_id
    *
    * @return \Drupal\entity_overview\EngineInterface
    * @throws \Drupal\Component\Plugin\Exception\PluginException
    */
-  public function getEngine($entity_bundle) {
+  public function getEngine($overview_id) {
     $engines = &drupal_static(__FUNCTION__, []);
-    if (empty($engines[$entity_bundle])) {
-      $engine = $this->getEntityBundleConfig($entity_bundle)['engine'] ?? 'entity_query';
-      $engines[$entity_bundle] = $this->engineManager->createInstance($engine);
+    if (empty($engines[$overview_id])) {
+      $engine = $this->getOverviewConfig($overview_id)['engine'] ?? 'entity_query';
+      $engines[$overview_id] = $this->engineManager->createInstance($engine);
     }
-    return $engines[$entity_bundle];
+    return $engines[$overview_id];
   }
 
   /**
-   * @param string $entity_bundle
+   * @param string $overview_id
    * @param array $filter
    * @param int $page
    *
    * @return mixed
    */
-  public function getResult($entity_bundle, array $filter = [], $page = 0) {
-    return $this->getEngine($entity_bundle)->getResult($entity_bundle, $filter, $page);
+  public function getResult($overview_id, array $filter = [], $page = 0) {
+    return $this->getEngine($overview_id)->getResult($overview_id, $filter, $page);
   }
 
   /**
-   * @param string $entity_bundle
+   * @param string $overview_id
    * @param array $filter
    * @param int $page
    *
    * @return EntityInterface[]
    */
-  public function getEntities($entity_bundle, array $filter = [], $page = 0) {
-    return $this->getEngine($entity_bundle)->getEntities($entity_bundle, $filter, $page);
+  public function getEntities($overview_id, array $filter = [], $page = 0) {
+    return $this->getEngine($overview_id)->getEntities($overview_id, $filter, $page);
   }
 
   /**
-   * @param string $entity_bundle
+   * @param string $overview_id
    * @param array $filter
    * @param int $shown
    *
    * @return \Drupal\Core\StringTranslation\TranslatableMarkup
    */
-  public function getEntitiesTotal($entity_bundle, array $filter = [], $shown = 0) {
-    return $this->getEngine($entity_bundle)->getEntitiesTotal($entity_bundle, $filter, $shown);
+  public function getEntitiesTotal($overview_id, array $filter = [], $shown = 0) {
+    return $this->getEngine($overview_id)->getEntitiesTotal($overview_id, $filter, $shown);
   }
 
   /**
@@ -292,16 +364,41 @@ class OverviewManager {
     return TRUE;
   }
 
-  public function getBaseFacets($entity_bundle): array {
-    return $this->getEngine($entity_bundle)->getBaseFacets($entity_bundle);
+  public function getBaseFacets($overview_id): array {
+    return $this->getEngine($overview_id)->getBaseFacets($overview_id);
   }
 
-  public function getBaseFacetForm($entity_bundle, $facet, $default_value): array {
+  public function getBaseFacetForm($entity_bundle, $facet, ?string $default_value): array {
     return $this->getEngine($entity_bundle)->getBaseFacetForm($entity_bundle, $facet, $default_value);
   }
 
-  public function getCacheableMetadata($entity_bundle, bool $has_facets): CacheableMetadata {
-    return $this->getEngine($entity_bundle)->getCacheableMetadata($entity_bundle, $has_facets);
+  public function getCacheableMetadata($overview_id, bool $has_facets): CacheableMetadata {
+    return $this->getEngine($overview_id)->getCacheableMetadata($overview_id, $has_facets);
+  }
+
+  /**
+   * @param \Drupal\Core\Entity\EntityInterface[] $entities
+   * @param string $view_mode
+   *
+   * @return array
+   */
+  public function buildEntitiesWithViewmode(array $entities, $view_mode) {
+    $types = [];
+    foreach ($entities as $key => $entity) {
+      if (!isset($types[$entity->getEntityTypeId()])) {
+        $types[$entity->getEntityTypeId()] = [];
+      }
+      $types[$entity->getEntityTypeId()][$entity->id()] = $entity;
+    }
+    $views = [];
+    foreach ($types as $entity_type_id => $entities) {
+      $views[$entity_type_id] = $this->entityTypeManager->getViewBuilder($entity_type_id)->viewMultiple($entities, $view_mode);
+    }
+    $build = [];
+    foreach ($entities as $key => $entity) {
+      $build[$key] = $views[$entity->getEntityTypeId()][$entity->id()];
+    }
+    return $build;
   }
 
 }

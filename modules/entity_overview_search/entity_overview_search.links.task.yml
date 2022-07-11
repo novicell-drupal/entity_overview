@@ -1,0 +1,5 @@
+entity_overview_search.settings:
+  route_name: entity_overview_search.settings
+  base_route: entity_overview.list
+  title: Search
+  weight: 10

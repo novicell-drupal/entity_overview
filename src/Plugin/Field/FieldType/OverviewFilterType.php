@@ -57,7 +57,7 @@ class OverviewFilterType extends FieldItemBase {
     $element['entity_bundle'] = [
       '#type' => 'select',
       '#title' => t('Overview configuration'),
-      '#options' => $this->overviewManager->getEntityBundles(),
+      '#options' => $this->overviewManager->getOverviewConfigs(),
       '#default_value' => $this->getSetting('entity_bundle'),
     ];
 

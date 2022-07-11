@@ -84,8 +84,8 @@ msgstr "Hvilket kriterie skal elementer sorteres efter."
 msgid "Sort select"
 msgstr "Sorterings valg"
 
-msgid "Add overview config"
-msgstr "Tilføj overblikskonfiguration"
+msgid "Add overview"
+msgstr "Tilføj overblik"
 
 msgid "Configure Entity Overview"
 msgstr "Konfigurer indholdsoverblikke"
@@ -105,8 +105,14 @@ msgstr "Hvilket felt skal bruges til sortering?"
 msgid "There is no new content types ready for overviews."
 msgstr "Der er ingen nye indholdstyper der er klar til overblik."
 
-msgid "Are you sure you want to delete the overview config %entity_bundle?"
-msgstr "Er du sikker på at du vil slette overblikskonfigurationen %entity_bundle?"
+msgid "Are you sure you want to delete the overview config %label?"
+msgstr "Er du sikker på at du vil slette overblikskonfigurationen %label?"
 
-msgid "Overview config %entity_bundle has been deleted."
-msgstr "Overblikskonfigurationen %entity_bundle er blevet slettet."
+msgid "Overview config %label has been deleted."
+msgstr "Overblikskonfigurationen %label er blevet slettet."
+
+msgid "You must select at least one entity bundle."
+msgstr "Du skal vælge mindst en entitets type."
+
+msgid "The %engine engine only supports a single entity type."
+msgstr "%engine motoren understøtter kun en enkelt entitetstype."

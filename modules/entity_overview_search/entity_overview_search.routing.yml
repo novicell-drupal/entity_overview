@@ -1,0 +1,15 @@
+entity_overview_search.settings:
+  path: '/admin/config/content/entity_overview/search'
+  defaults:
+    _form: '\Drupal\entity_overview_search\Form\OverviewSearchSettings'
+    _title: 'Entity overview search settings'
+  requirements:
+    _permission: 'configure entity overview'
+
+entity_overview_search.search:
+  path: '/search'
+  defaults:
+    _form: '\Drupal\entity_overview_search\Form\OverviewSearchPageForm'
+    _title: 'Search'
+  requirements:
+    _access: 'TRUE'

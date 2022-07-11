@@ -1,0 +1,15 @@
+name: Entity Overview Search
+description: Use Entity Overview for search functionality.
+type: module
+core_version_requirement: ^8 || ^9
+version: '1.3'
+configure: entity_overview_search.settings
+
+dependencies:
+  - core:node
+  - core:datetime
+  - core:taxonomy
+  - entity_overview:entity_overview
+
+interface translation project: entity_overview_search
+interface translation server pattern: modules/contrib/entity_overview_search/translations/%language.po
