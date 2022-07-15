@@ -8,3 +8,23 @@ function entity_overview_locale_translation_projects_alter(&$projects) {
   $path = $module_handler->getModule('entity_overview')->getPath();
   $projects['entity_overview']['info']['interface translation server pattern'] = $path.'/translations/%language.po';
 }
+
+/**
+ * Implements hook_theme().
+ */
+function entity_overview_theme($existing, $type, $theme, $path) {
+  $themes['overview_form'] = ['render element' => 'form'];
+
+  return $themes;
+}
+
+/**
+ * Implements hook_theme_suggestions_HOOK().
+ */
+function entity_overview_theme_suggestions_overview_form(array $variables) {
+  $suggestions = [];
+  if (!empty($variables['form']['#overview'])) {
+    $suggestions[] = 'overview_form__' . $variables['form']['#overview'];
+  }
+  return $suggestions;
+}

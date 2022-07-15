@@ -21,8 +21,8 @@ class EntityOverviewSettings extends \Drupal\Core\Form\FormBase {
 
     $form['deeplinks'] = [
       '#type' => 'checkbox',
-      '#title' => $this->t('Enable deeplinks'),
-      '#description' => $this->t('Overviews will change url when filters are changed allowing users to bookmark specific filter settings. Will cost performance.'),
+      '#title' => $this->t('Enable deeplinking'),
+      '#description' => $this->t('Overviews will change the url when filters are changed allowing users to bookmark specific filter settings. Will cost performance.'),
       '#default_value' => TRUE,
       '#attributes' => ['disabled' => TRUE]
     ];

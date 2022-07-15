@@ -63,6 +63,8 @@ class OverviewFilterForm extends FormBase {
     $values = $this->options;
     $overview_id = $options['overview'] ?? $options['entity_bundle'];
 
+    $form['#theme'] = 'overview_form';
+    $form['#overview'] = $overview_id;
     $form['#attributes']['class'][] = 'overview-form';
     if ($this->overviewManager->deepLinksEnabled()) {
       $form['#attached']['library'] = array_merge($form['#attached']['library'] ?? [], ['html5history/html5history.ajax']);
@@ -129,7 +131,7 @@ class OverviewFilterForm extends FormBase {
     $form['facets'] = [];
     $fields = $this->overviewManager->getFieldFormElements($overview_id);
     foreach ($fields as $field_name => $form_element) {
-      if (in_array($field_name, $options['facets'])) {
+      if (in_array($field_name, $this->options['facets'])) {
         $form['facets'][$field_name] = [
           '#type' => $form_element['form_element'],
           '#title' => $form_element['label'],
@@ -145,22 +147,17 @@ class OverviewFilterForm extends FormBase {
     $base_facets = $this->overviewManager->getBaseFacets($overview_id);
     foreach ($base_facets as $id => $label) {
       if (in_array($id, $options['facets'])) {
-        switch($id) {
-          case 'count':
-          case 'sort':
-            $form['facets'][$id] = $this->overviewManager->getBaseFacetForm($overview_id, $id, $form_state->get($id));
-            $form['facets'][$id]['#ajax'] = $ajax;
-            break;
-          default:
-            $form['facets'][$id] = $this->overviewManager->getBaseFacetForm($overview_id, $id, $form_state->get(['fields', $id]));
-            $form['facets'][$id]['#ajax'] = $ajax;
-            break;
-        }
+        $form['facets'][$id] = $this->overviewManager->getBaseFacetForm($overview_id, $id, $form_state->get($id));
+        $form['facets'][$id]['#ajax'] = $ajax;
       }
     }
 
     if (!empty($form['facets'])) {
       $form['facets']['#type'] = 'container';
+      $form['facets']['#attributes'] = [
+        'id' => "overview-form-facets",
+        'class' => ['overview-form-facets']
+      ];
     }
 
     $form['content'] = $this->buildContents($form_state);
@@ -199,7 +196,7 @@ class OverviewFilterForm extends FormBase {
    */
   public function buildContents(FormStateInterface $form_state) {
     $options = $this->optionsFromFormState($form_state);
-    $overview_id = $form_state->get('entity_bundle') ?? 'node.page';
+    $overview_id = $form_state->get('overview') ?? $form_state->get('entity_bundle') ?? 'node.page';
     $page = $options['page'];
 
     if (!$this->request->isXmlHttpRequest() || $form_state->isRebuilding()) {
@@ -238,9 +235,9 @@ class OverviewFilterForm extends FormBase {
    * @return array
    */
   protected function optionsFromFormState(FormStateInterface $form_state) {
-    $overview_id = $form_state->get('entity_bundle');
+    $overview_id = $form_state->get('overview');
     $options = [
-      'entity_bundle' => $form_state->get('entity_bundle'),
+      'overview' => $form_state->get('overview'),
       'fields' => $form_state->get('fields'),
       'view_mode' => $form_state->get('view_mode'),
       'pagination' => $form_state->get('pagination'),
@@ -248,7 +245,9 @@ class OverviewFilterForm extends FormBase {
       'page' => $form_state->getValue('page') ?? $form_state->get('page') ?? 0
     ];
     foreach ($this->overviewManager->getBaseFacets($overview_id) as $facet => $label) {
-      $options[$facet] = $form_state->getValue($facet) ?? $form_state->get($facet);
+      if ($form_state->hasValue($facet) || $form_state->has($facet) || in_array($facet, $this->options['facets'])) {
+        $options[$facet] = $form_state->getValue($facet) ?? $form_state->get($facet) ?? NULL;
+      }
     }
     $this->request->query->set('page', $options['page']);
     foreach ($options['fields'] as $key => $value) {
@@ -337,7 +336,15 @@ class OverviewFilterForm extends FormBase {
     $response = new AjaxResponse();
     $response->addCommand(new ReplaceCommand('.overview-form-contents', $form['content']));
     $url = Url::fromRoute('<current>');
-    $data = ($options['fields'] ?? []) + ['sort' => $options['sort'], 'page' => $options['page']];
+    $data = ($options['fields'] ?? []);
+    foreach ($this->overviewManager->getBaseFacets($options['overview']) as $facet => $label) {
+      if (in_array($facet, $this->options['facets'])) {
+        $data[$facet] = $options[$facet];
+      }
+    }
+    if ($options['pagination']) {
+      $data['page'] = $options['page'];
+    }
     $response->addCommand(new HistoryReplaceStateCommand(NULL, NULL, $url->toString() . '?' . http_build_query($data)));
     return $response;
   }

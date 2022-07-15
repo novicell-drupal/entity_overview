@@ -8,6 +8,7 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
+use Drupal\entity_overview\OverviewManager;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class EntityOverviewList extends FormBase {
@@ -15,11 +16,13 @@ class EntityOverviewList extends FormBase {
   protected $entityTypeManager;
   protected $entityFieldManager;
   protected $entityTypeBundleInfo;
+  protected $overviewManager;
 
-  function __construct(EntityTypeManagerInterface $entityTypeManager, EntityFieldManagerInterface $entityFieldManager, EntityTypeBundleInfoInterface $entityTypeBundleInfo) {
+  function __construct(EntityTypeManagerInterface $entityTypeManager, EntityFieldManagerInterface $entityFieldManager, EntityTypeBundleInfoInterface $entityTypeBundleInfo, OverviewManager $overviewManager) {
     $this->entityTypeManager = $entityTypeManager;
     $this->entityFieldManager = $entityFieldManager;
     $this->entityTypeBundleInfo = $entityTypeBundleInfo;
+    $this->overviewManager = $overviewManager;
   }
 
   /**
@@ -29,7 +32,8 @@ class EntityOverviewList extends FormBase {
     return new static(
       $container->get('entity_type.manager'),
       $container->get('entity_field.manager'),
-      $container->get('entity_type.bundle.info')
+      $container->get('entity_type.bundle.info'),
+      $container->get('entity_overview.manager')
     );
   }
 
@@ -50,7 +54,7 @@ class EntityOverviewList extends FormBase {
 
     $form['list'] = [
       '#type' => 'table',
-      '#header' => [$this->t('Name'), $this->t('Entity types'), $this->t('Operations')],
+      '#header' => [$this->t('Name'), $this->t('Engine'), $this->t('Entity types'), $this->t('Operations')],
       '#empty' => $this->t('There are no overview configurations yet.'),
       '#tableselect' => FALSE,
       '#attributes' => ['class' => ["responsive-enabled"]],
@@ -64,6 +68,11 @@ class EntityOverviewList extends FormBase {
         '#type' => 'link',
         '#title' => $config->get('label') ?? $id,
         '#url' => Url::fromRoute('entity_overview.edit', ['id' => $id]),
+      ];
+
+
+      $form['list'][$id]['engine'] = [
+        '#markup' => $this->overviewManager->getEngine($id)->label()
       ];
 
       $labels = [];

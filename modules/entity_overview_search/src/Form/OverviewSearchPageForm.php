@@ -21,7 +21,10 @@ class OverviewSearchPageForm extends OverviewFilterForm {
     return 'entity_overview_search_page';
   }
 
-  public function buildForm(array $form, FormStateInterface $form_state, $options = []) {
+  /**
+   * @inheritDoc
+   */
+  public function buildForm(array $form, FormStateInterface $form_state, array $options = []) {
     $config = $this->config('entity_overview_search.settings');
     $overview_id = $config->get('overview') ?? NULL;
     if (empty($overview_id)) {
@@ -31,9 +34,17 @@ class OverviewSearchPageForm extends OverviewFilterForm {
     $overview = $this->overviewManager->getOverviewConfig($overview_id);
 
     $options = $config->getRawData();
+    $options['fields'] = [];
+    foreach ($overview['fields'] as $field => $value) {
+      $options['fields'][$field] = [];
+    }
+    foreach ($options['facets'] as $facet) {
+      if (!isset($options[$facet])) {
+        $options[$facet] = NULL;
+      }
+    }
     $options['pagination'] = TRUE;
     $options['show_total'] = $overview['show_total'];
-    dpm($options);
 
     $form = parent::buildForm($form, $form_state, $options);
 
@@ -49,6 +60,7 @@ class OverviewSearchPageForm extends OverviewFilterForm {
       ]);
     }
     $form['facets']['text']['#type'] = 'search';
+    $form['facets']['text']['#attributes']['class'][] = 'overview-form-search-title';
     $form['facets']['text']['#title'] = $title;
 
     return $form;
@@ -62,7 +74,7 @@ class OverviewSearchPageForm extends OverviewFilterForm {
    * @param array $options
    */
   protected function buildEntitiesInContent(array &$content, array $entities, array $options) {
-    if (empty($nodes)) {
+    if (empty($entities)) {
       $content['content'] = [
         '#markup' => $this->t('Your search yielded no results.')->__toString()
       ];
@@ -82,13 +94,13 @@ class OverviewSearchPageForm extends OverviewFilterForm {
   public function contentCallback($form, FormStateInterface $form_state) {
     /** @var \Drupal\Core\Ajax\AjaxResponse $response */
     $response = parent::contentCallback($form, $form_state);
-    if (empty($form_state->getValue('term'))) {
+    if (empty($form_state->getValue('text'))) {
       $title = $this->t('Search results');
     } else {
-      $title = $this->t('Search results for “@keyword”', ['@keyword' => $form_state->getValue('term')])
+      $title = $this->t('Search results for “@keyword”', ['@keyword' => $form_state->getValue('text')])
         ->__toString();
     }
-    $response->addCommand(new HtmlCommand('.article-list__filters .js-form-item-term label', $title));
+    $response->addCommand(new HtmlCommand('.overview-form-search-title label', $title));
     return $response;
   }
 

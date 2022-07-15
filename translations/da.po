@@ -18,6 +18,9 @@ msgstr ""
 msgid "Entity Overview"
 msgstr "Indholdsoverblik"
 
+msgid "Overviews"
+msgstr "Overblikke"
+
 msgid "Overview functionality for entities."
 msgstr "Overbliksfunktionalitet til entities."
 
@@ -93,17 +96,14 @@ msgstr "Konfigurer indholdsoverblikke"
 msgid "Configure entity overview."
 msgstr "Konfigurer indholdsoverblikke."
 
-msgid "There are no overview configurations yet."
-msgstr "Der er ingen overblikskonfigurationer endnu."
+msgid "There are no overviews yet."
+msgstr "Der er ingen overblikke endnu."
 
 msgid "What fields can be used as facets?"
 msgstr "Hvilke felter kan bruges som facetter?"
 
 msgid "What field should be used for sorting?"
 msgstr "Hvilket felt skal bruges til sortering?"
-
-msgid "There is no new content types ready for overviews."
-msgstr "Der er ingen nye indholdstyper der er klar til overblik."
 
 msgid "Are you sure you want to delete the overview config %label?"
 msgstr "Er du sikker på at du vil slette overblikskonfigurationen %label?"
@@ -116,3 +116,9 @@ msgstr "Du skal vælge mindst en entitets type."
 
 msgid "The %engine engine only supports a single entity type."
 msgstr "%engine motoren understøtter kun en enkelt entitetstype."
+
+msgid "Enable deeplinking"
+msgstr "Aktivér deeplinks"
+
+msgid "Overviews will change the url when filters are changed allowing users to bookmark specific filter settings. Will cost performance."
+msgstr "Overblikke vil ændre url'en når der bliver ændret filtre hvilket gør det muligt at bogmærke specifikke filter indstillinger. Detter koster dog ydeevne."

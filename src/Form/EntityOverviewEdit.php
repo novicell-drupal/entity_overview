@@ -139,17 +139,11 @@ class EntityOverviewEdit extends FormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $label = $form_state->getValue('label');
-    $entity_type_id = $form_state->getValue('entity_type_id');
-    $bundle = $form_state->getValue('bundle');
-    $entity_bundle = $entity_type_id . '.' . $bundle;
+    $overview_id = $form_state->getValue('id');
 
-
-    $config = $this->configFactory()->getEditable('entity_overview.' . $entity_bundle);
-    $config->set('id', $entity_bundle);
+    $config = $this->configFactory()->getEditable('entity_overview.' . $overview_id);
+    $config->set('id', $overview_id);
     $config->set('label', $label);
-    $config->set('entity_type_id', $entity_type_id);
-    $config->set('bundle', $bundle);
-    $config->set('engine', $form_state->getValue('engine'));
 
     $fields = [];
     foreach ($form_state->getValue('fields') as $key => $value) {
