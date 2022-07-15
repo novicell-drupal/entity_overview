@@ -1,0 +1,7 @@
+<form{{ attributes }}>
+  <div class="overview-form-facets">
+    {{ form.facets }}
+  </div>
+  {{ form.content }}
+  {{ form|without('content', 'facets') }}
+</form>
