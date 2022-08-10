@@ -8,6 +8,7 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Extension\ModuleHandler;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 
@@ -45,13 +46,19 @@ class OverviewManager {
    */
   protected $engineManager;
 
-  function __construct(EntityTypeManagerInterface $entityTypeManager, ConfigFactoryInterface $configFactory, EntityFieldManagerInterface $entityFieldManager, EntityTypeBundleInfoInterface $entityTypeBundleInfo, EngineManager $engineManager) {
+  /**
+   * @var \Drupal\Core\Extension\ModuleHandler
+   */
+  private ModuleHandler $moduleHandler;
+
+  function __construct(EntityTypeManagerInterface $entityTypeManager, ConfigFactoryInterface $configFactory, EntityFieldManagerInterface $entityFieldManager, EntityTypeBundleInfoInterface $entityTypeBundleInfo, EngineManager $engineManager, ModuleHandler $moduleHandler) {
     $this->entityTypeManager = $entityTypeManager;
     $this->entityFieldManager = $entityFieldManager;
     $this->entityTypeBundleInfo = $entityTypeBundleInfo;
     $this->taxonomyStorage = $entityTypeManager->getStorage('taxonomy_term');
     $this->configFactory = $configFactory;
     $this->engineManager = $engineManager;
+    $this->moduleHandler = $moduleHandler;
   }
 
   /**
@@ -141,14 +148,17 @@ class OverviewManager {
     return $element;
   }
 
-  public function getCountOptions() {
-    return [
+  public function getCountOptions($entity_bundle) {
+    $options = [
       5 => '5',
       10 => '10',
       15 => '15',
       20 => '20',
       25 => '25'
     ];
+
+    $this->moduleHandler->alter('entity_overview_count_options', $options, $entity_bundle);
+    return $options;
   }
 
   /**
