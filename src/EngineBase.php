@@ -84,7 +84,7 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
       case 'count':
         $form = [
           '#type' => 'select',
-          '#options' => $this->overviewManager->getCountOptions(),
+          '#options' => $this->overviewManager->getCountOptions($entity_bundle),
           '#default_value' => $default_value ?? 5
         ];
         break;
