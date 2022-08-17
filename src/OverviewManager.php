@@ -204,7 +204,7 @@ class OverviewManager {
     return $types;
   }
 
-  public function getCountOptions() {
+  public function getCountOptions($entity_bundle) {
     return [
   public function getCountOptions($entity_bundle) {
     $options = [
