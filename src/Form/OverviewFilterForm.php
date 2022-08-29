@@ -7,6 +7,7 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
+use Drupal\entity_overview\OverviewFilter;
 use Drupal\html5history\Ajax\HistoryReplaceStateCommand;
 use Drupal\entity_overview\OverviewManager;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -15,7 +16,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
 
 class OverviewFilterForm extends FormBase {
 
-  protected array $options = [];
+  protected OverviewFilter $filter;
 
   /**
    * @var OverviewManager
@@ -54,71 +55,24 @@ class OverviewFilterForm extends FormBase {
    *
    * @param array $form
    * @param \Drupal\Core\Form\FormStateInterface $form_state
-   * @param array $options
+   * @param array $filter
    *
    * @return array
    */
-  public function buildForm(array $form, FormStateInterface $form_state, array $options = []) {
-    $this->options = $options;
-    $values = $this->options;
-    $overview_id = $options['overview'] ?? $options['entity_bundle'];
+  public function buildForm(array $form, FormStateInterface $form_state, OverviewFilter $filter = NULL) {
+    $this->filter = $filter;
+    $overview = $filter->getOverview();
 
     $form['#theme'] = 'overview_form';
-    $form['#overview'] = $overview_id;
+    $form['#overview'] = $filter->getOverviewId();
     $form['#attributes']['class'][] = 'overview-form';
     if ($this->overviewManager->deepLinksEnabled()) {
       $form['#attached']['library'] = array_merge($form['#attached']['library'] ?? [], ['html5history/html5history.ajax']);
+      $filter->fetchRequestValues($this->request);
     }
-    $this->overviewManager->getCacheableMetadata($overview_id, !empty($options['facets']))->applyTo($form);
+    $overview->getCacheableMetadata($filter, !empty($filter->getFacets()))->applyTo($form);
 
-    $values['page'] = 0;
-    unset($values['facets']);
-    unset($values['_attributes']);
-    foreach ($values as $key => $value) {
-      if (!$form_state->has($key)) {
-        $form_state->set($key, $value);
-      }
-      if ($this->request->query->has($key)) {
-        $form_state->set($key, $this->request->query->get($key));
-      }
-      if ($form_state->hasValue($key)) {
-        if (is_array($form_state->getValue($key))) {
-          $result = [];
-          foreach ($form_state->getValue($key) as $value2) {
-            if ($value2) {
-              $result[] = $value2;
-            }
-          }
-          $form_state->set($key, $result);
-        } else {
-          $form_state->set($key, $form_state->getValue($key));
-        }
-      }
-    }
-    foreach ($values['fields'] as $key => $value) {
-      if ($this->request->query->has($key)) {
-        $form_state->set(['fields', $key], $this->request->query->get($key));
-      }
-      if ($form_state->hasValue($key)) {
-        if (is_array($form_state->getValue($key))) {
-          $result = [];
-          foreach ($form_state->getValue($key) as $value2) {
-            if ($value2) {
-              $result[] = $value2;
-            }
-          }
-          if ($form_state->get(['fields', $key]) != $result) {
-            $form_state->set('page', 0);
-            $form_state->set(['fields', $key], $result);
-          }
-        } else {
-          if ($form_state->get(['fields', $key]) != $form_state->getValue($key)) {
-            $form_state->set('page', 0);
-            $form_state->set(['fields', $key], $form_state->getValue($key));
-          }
-        }
-      }
-    }
+    $filter->updateFormState($form_state);
 
     $ajax = [
       'callback' => '::contentCallback',
@@ -129,26 +83,20 @@ class OverviewFilterForm extends FormBase {
       ],
     ];
     $form['facets'] = [];
-    $fields = $this->overviewManager->getFieldFormElements($overview_id);
-    foreach ($fields as $field_name => $form_element) {
-      if (in_array($field_name, $this->options['facets'])) {
-        $form['facets'][$field_name] = [
-          '#type' => $form_element['form_element'],
-          '#title' => $form_element['label'],
-          '#options' => $form_element['options'],
-          '#ajax' => $ajax
-        ];
-        if ($form_state->has(['fields', $field_name])) {
-          $form['facets'][$field_name]['#default_value'] = $form_state->get(['fields', $field_name]);
+    foreach ($this->overviewManager->getAllFieldInfos($overview) as $field => $info) {
+      if ($filter->hasFacet($field)) {
+        $form['facets'][$field] = $this->overviewManager->getFieldFormElement($filter, $field);
+        $form['facets'][$field]['#ajax'] = $ajax;
+        if ($info['base']) {
+          $form['facets'][$field]['#default_value'] = $form_state->get($field);
+        } else {
+          if ($form_state->has(['fields', $field])) {
+            $form['facets'][$field]['#default_value'] = $form_state->get([
+              'fields',
+              $field
+            ]);
+          }
         }
-      }
-    }
-
-    $base_facets = $this->overviewManager->getBaseFacets($overview_id);
-    foreach ($base_facets as $id => $label) {
-      if (in_array($id, $options['facets'])) {
-        $form['facets'][$id] = $this->overviewManager->getBaseFacetForm($overview_id, $id, $form_state->get($id));
-        $form['facets'][$id]['#ajax'] = $ajax;
       }
     }
 
@@ -195,12 +143,10 @@ class OverviewFilterForm extends FormBase {
    * @return array
    */
   public function buildContents(FormStateInterface $form_state) {
-    $options = $this->optionsFromFormState($form_state);
-    $overview_id = $form_state->get('overview') ?? $form_state->get('entity_bundle') ?? 'node.page';
-    $page = $options['page'];
+    $filter = OverviewFilter::createFromFormState($this->filter, $form_state);
 
     if (!$this->request->isXmlHttpRequest() || $form_state->isRebuilding()) {
-      $entities = $this->getEntitiesForBuilding($overview_id, $options, $page);
+      $entities = $this->getEntitiesForBuilding($filter);
     } else {
       $entities = [];
     }
@@ -211,15 +157,15 @@ class OverviewFilterForm extends FormBase {
         'class' => ['overview-form-contents']
       ],
     ];
-    $this->buildEntitiesInContent($content, $entities, $options);
+    $this->buildEntitiesInContent($content, $entities, $filter);
 
-    if (!empty($options['show_total'])) {
+    if (!empty($filter->getShowTotal())) {
       $content['total'] = [
-        '#markup' => $this->getEntitiesTotal($overview_id, $options, count($entities))
+        '#markup' => $this->getEntitiesTotal($filter, count($entities))
       ];
     }
 
-    if ($options['pagination']) {
+    if ($filter->hasPagination()) {
       if (!$this->request->isXmlHttpRequest() || $form_state->isRebuilding()) {
         $content['pager'] = [
           '#type' => 'pager'
@@ -230,68 +176,26 @@ class OverviewFilterForm extends FormBase {
   }
 
   /**
-   * @param \Drupal\Core\Form\FormStateInterface $form_state
-   *
-   * @return array
-   */
-  protected function optionsFromFormState(FormStateInterface $form_state) {
-    $overview_id = $form_state->get('overview');
-    $options = [
-      'overview' => $form_state->get('overview'),
-      'fields' => $form_state->get('fields'),
-      'view_mode' => $form_state->get('view_mode'),
-      'pagination' => $form_state->get('pagination'),
-      'show_total' => $form_state->get('show_total') ?? $this->overviewManager->getShowTotal($overview_id),
-      'page' => $form_state->getValue('page') ?? $form_state->get('page') ?? 0
-    ];
-    foreach ($this->overviewManager->getBaseFacets($overview_id) as $facet => $label) {
-      if ($form_state->hasValue($facet) || $form_state->has($facet) || in_array($facet, $this->options['facets'])) {
-        $options[$facet] = $form_state->getValue($facet) ?? $form_state->get($facet) ?? NULL;
-      }
-    }
-    $this->request->query->set('page', $options['page']);
-    foreach ($options['fields'] as $key => $value) {
-      if ($form_state->hasValue($key)) {
-        if (is_array($form_state->getValue($key))) {
-          $result = [];
-          foreach ($form_state->getValue($key) as $value2) {
-            if ($value2) {
-              $result[] = $value2;
-            }
-          }
-          $options['fields'][$key] = $result;
-        } else {
-          $options['fields'][$key] = $form_state->getValue($key);
-        }
-      }
-    }
-    return $options;
-  }
-
-  /**
    * Function for retrieving the entities to be displayed. Overwrite for when a custom query is necessary.
    *
-   * @param string $overview_id
-   * @param array $options
-   * @param int $page
+   * @param \Drupal\entity_overview\OverviewFilter $filter
    *
    * @return \Drupal\Core\Entity\EntityInterface[]
    */
-  protected function getEntitiesForBuilding($overview_id, array $options, $page = 0) {
-    return $this->overviewManager->getEntities($overview_id, $options, $page);
+  protected function getEntitiesForBuilding(OverviewFilter $filter) {
+    return $filter->getOverview()->getEntities($filter);
   }
 
   /**
    * Function for getting total number of entities. Overwrite for when a custom query is necessary.
    *
-   * @param string $overview_id
-   * @param array $options
+   * @param \Drupal\entity_overview\OverviewFilter $filter
    * @param int $shown
    *
    * @return \Drupal\Core\StringTranslation\TranslatableMarkup
    */
-  protected function getEntitiesTotal($overview_id, array $options, $shown) {
-    return $this->overviewManager->getEntitiesTotal($overview_id, $options, $shown);
+  protected function getEntitiesTotal(OverviewFilter $filter, $shown) {
+    return $filter->getOverview()->getEntitiesTotal($filter, $shown);
   }
 
   /**
@@ -299,10 +203,10 @@ class OverviewFilterForm extends FormBase {
    *
    * @param array $content
    * @param EntityInterface[] $entities
-   * @param array $options
+   * @param \Drupal\entity_overview\OverviewFilter $filter
    */
-  protected function buildEntitiesInContent(array &$content, array $entities, array $options) {
-    $content['content'] = $this->overviewManager->buildEntitiesWithViewmode($entities, $options['view_mode']);
+  protected function buildEntitiesInContent(array &$content, array $entities, OverviewFilter $filter) {
+    $content['content'] = $this->overviewManager->buildEntitiesWithViewmode($entities, $filter->getViewMode());
   }
 
   /**
@@ -332,20 +236,23 @@ class OverviewFilterForm extends FormBase {
    * @return mixed
    */
   public function contentCallback($form, FormStateInterface $form_state) {
-    $options = $this->optionsFromFormState($form_state);
+    $filter = OverviewFilter::createFromFormState($this->filter, $form_state);
     $response = new AjaxResponse();
     $response->addCommand(new ReplaceCommand('.overview-form-contents', $form['content']));
-    $url = Url::fromRoute('<current>');
-    $data = ($options['fields'] ?? []);
-    foreach ($this->overviewManager->getBaseFacets($options['overview']) as $facet => $label) {
-      if (in_array($facet, $this->options['facets'])) {
-        $data[$facet] = $options[$facet];
+    if ($this->overviewManager->deepLinksEnabled()) {
+      $url = Url::fromRoute('<current>');
+      $data = $filter->getFieldValues();
+      $array = $filter->toArray();
+      foreach ($this->overviewManager->getBaseFields() as $facet) {
+        if ($filter->hasFacet($facet)) {
+          $data[$facet] = $array[$facet];
+        }
       }
+      if ($filter->hasPagination()) {
+        $data['page'] = $filter->getPage();
+      }
+      $response->addCommand(new HistoryReplaceStateCommand(NULL, NULL, $url->toString() . '?' . http_build_query($data)));
     }
-    if ($options['pagination']) {
-      $data['page'] = $options['page'];
-    }
-    $response->addCommand(new HistoryReplaceStateCommand(NULL, NULL, $url->toString() . '?' . http_build_query($data)));
     return $response;
   }
 }

@@ -1,5 +1,5 @@
 entity_overview.add_entity_bundle:
-  route_name: 'entity_overview.add'
+  route_name: 'entity.entity_overview.add_form'
   title: 'Add overview'
   appears_on:
-    - entity_overview.list
+    - entity.entity_overview.collection

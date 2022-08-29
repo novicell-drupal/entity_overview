@@ -3,6 +3,7 @@ namespace Drupal\entity_overview\Plugin\Field\FieldFormatter;
 
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\entity_overview\OverviewFilter;
 
 /**
  * Plugin implementation of the 'overview_filter_form' formatter.
@@ -24,11 +25,15 @@ class OverviewFormFormatter extends OverviewListFormatter {
     $elements = [];
 
     foreach ($items as $delta => $item) {
-      $options = $item->getValue();
-      $options['overview'] = $items->getSetting('entity_bundle');
-      $options['view_mode'] = $this->getSetting('view_mode');
+      $overview_id = $items->getSetting('overview');
+      if (empty($overview_id)) {
+        $entity_bundle = $items->getSetting('entity_bundle');
+        $overview_id = str_replace('node.', '', $entity_bundle);
+      }
+      $filter = new OverviewFilter($overview_id, $item->getValue());
+      $filter->setViewMode($this->getSetting('view_mode'));
 
-      $elements[$delta] = \Drupal::formBuilder()->getForm('Drupal\entity_overview\Form\OverviewFilterForm', $options);
+      $elements[$delta] = \Drupal::formBuilder()->getForm('Drupal\entity_overview\Form\OverviewFilterForm', $filter);
     }
 
     return $elements;

@@ -9,6 +9,7 @@ use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Field\WidgetBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element\Checkboxes;
+use Drupal\entity_overview\OverviewFilter;
 use Drupal\entity_overview\OverviewManager;
 use Drupal\styles\StylesManager;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -51,83 +52,13 @@ class OverviewFilterWidget extends WidgetBase {
   public function formElement(FieldItemListInterface $items, $delta, array $element, array &$form, FormStateInterface $form_state) {
     /** @var FieldItemInterface $item */
     $item = $items[$delta] ?? [];
-    $entity_bundle = $this->getFieldSetting('entity_bundle');
-    $fields = $this->overviewManager->getFieldFormElements($entity_bundle);
-
-    if (!empty($item) && $item->getEntity()->getEntityTypeId() == 'taxonomy_term') {
-      $vid = $item->getEntity()->bundle();
-      foreach ($fields as $field_name => $form_element) {
-        if ($form_element['vid'] == $vid) {
-          $element['fields'][$field_name] = [
-            '#type' => 'item',
-            '#title' => $form_element['label'],
-            '#description' => $item->getEntity()->label() ?? $this->t('Show entities of this type.'),
-          ];
-          $element['element_id_field'] = [
-            '#type' => 'hidden',
-            '#default_value' => $field_name
-          ];
-          unset($fields[$field_name]);
-        }
-      }
+    $overview_id = $this->getFieldSetting('overview');
+    if (empty($overview_id)) {
+      $entity_bundle = $this->getFieldSetting('entity_bundle');
+      $overview_id = str_replace('node.', '', $entity_bundle);
     }
-
-    foreach ($fields as $field_name => $form_element) {
-      $element['fields'][$field_name] = [
-        '#type' => $form_element['form_element'],
-        '#title' => $form_element['label'],
-        '#description' => $this->t('Default values'),
-        '#options' => $form_element['options'],
-        '#default_value' => $item->fields[$field_name] ?? []
-      ];
-    }
-
-    $base_facets = $this->overviewManager->getBaseFacets($entity_bundle);
-    foreach ($base_facets as $id => $label) {
-      switch($id) {
-        case 'count':
-        case 'sort':
-          $element[$id] = $this->overviewManager->getBaseFacetForm($entity_bundle, $id, $item->getValue()[$id] ?? NULL);
-          $element[$id]['#title'] = $label;
-          break;
-        default:
-          $element['fields'][$id] = $this->overviewManager->getBaseFacetForm($entity_bundle, $id, $item->getValue()['fields'][$id] ?? NULL);
-          $element['fields'][$id]['#title'] = $label;
-          break;
-      }
-    }
-
-    if ($this->getFieldSetting('allow_facets')) {
-      $filter_options = $base_facets;
-      foreach ($fields as $field_name => $form_element) {
-        $filter_options[$field_name] = $form_element['label'];
-      }
-      if (!empty($filter_options)) {
-        $element['facets'] = [
-          '#type' => 'checkboxes',
-          '#title' => $this->t('Facets'),
-          '#description' => $this->t('Select the facets that you want to expose to the user.'),
-          '#options' => $filter_options,
-          '#default_value' => $item->facets ?? [],
-        ];
-      }
-
-      $element['pagination'] = [
-        '#type' => 'checkbox',
-        '#title' => $this->t('Pagination'),
-        '#description' => $this->t('Display pager at the bottom.'),
-        '#default_value' => $item->pagination ?? FALSE,
-      ];
-    } else {
-      $element['facets'] = [
-        '#type' => 'hidden',
-        '#default_value' => '',
-      ];
-      $element['pagination'] = [
-        '#type' => 'hidden',
-        '#default_value' => FALSE,
-      ];
-    }
+    $filter = new OverviewFilter($overview_id, $item->toArray());
+    $element = $this->overviewManager->buildOverviewFilterForm($filter, $this->getFieldSetting('allow_facets'));
 
     // If cardinality is 1, ensure a proper label is output for the field.
     if ($this->fieldDefinition->getFieldStorageDefinition()->getCardinality() == 1) {

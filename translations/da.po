@@ -117,8 +117,11 @@ msgstr "Du skal vælge mindst en entitets type."
 msgid "The %engine engine only supports a single entity type."
 msgstr "%engine motoren understøtter kun en enkelt entitetstype."
 
+msgid "Overview %label saved."
+msgstr "Overblik %label gemt."
+
 msgid "Enable deeplinking"
 msgstr "Aktivér deeplinks"
 
 msgid "Overviews will change the url when filters are changed allowing users to bookmark specific filter settings. Will cost performance."
-msgstr "Overblikke vil ændre url'en når der bliver ændret filtre hvilket gør det muligt at bogmærke specifikke filter indstillinger. Detter koster dog ydeevne."
+msgstr "Overblikke vil ændre url'en når der bliver ændret filtre hvilket gør det muligt at bogmærke specifikke filter indstillinger. Dette koster dog ydeevne."

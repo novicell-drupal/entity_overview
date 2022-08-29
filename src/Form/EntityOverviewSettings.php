@@ -2,9 +2,10 @@
 
 namespace Drupal\entity_overview\Form;
 
+use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 
-class EntityOverviewSettings extends \Drupal\Core\Form\FormBase {
+class EntityOverviewSettings extends ConfigFormBase {
 
   /**
    * @inheritDoc
@@ -35,6 +36,13 @@ class EntityOverviewSettings extends \Drupal\Core\Form\FormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     // TODO: Implement submitForm() method.
+  }
+
+  /**
+   * @inheritDoc
+   */
+  protected function getEditableConfigNames() {
+    return ['entity_overview.settings'];
   }
 
 }

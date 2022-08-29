@@ -45,7 +45,8 @@ class OverviewFilterType extends FieldItemBase {
    */
   public static function defaultStorageSettings() {
     return [
-        'entity_bundle' => 'node.page',
+        'entity_bundle' => '', // Deprecated. Only needed for migration.
+        'overview' => '',
         'allow_facets' => FALSE,
       ] + parent::defaultStorageSettings();
   }
@@ -54,11 +55,11 @@ class OverviewFilterType extends FieldItemBase {
    * {@inheritdoc}
    */
   public function storageSettingsForm(array &$form, FormStateInterface $form_state, $has_data) {
-    $element['entity_bundle'] = [
+    $element['overview'] = [
       '#type' => 'select',
       '#title' => t('Overview configuration'),
       '#options' => $this->overviewManager->getOverviewConfigs(),
-      '#default_value' => $this->getSetting('entity_bundle'),
+      '#default_value' => $this->getSetting('overview_id'),
     ];
 
     $element['allow_facets'] = [
@@ -106,7 +107,7 @@ class OverviewFilterType extends FieldItemBase {
       ->setLabel(t('Pagination'))
       ->setRequired(TRUE);
     $properties['facets'] = ListDataDefinition::create('list')
-      ->setLabel(t('Filters'))
+      ->setLabel(t('Facets'))
       ->setItemDefinition(DataReferenceTargetDefinition::create('string')
         ->setLabel(new TranslatableMarkup('Field')))
       ->setRequired(FALSE);

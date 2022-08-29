@@ -47,5 +47,5 @@ class Engine extends Plugin {
    *
    * @var boolean
    */
-  public $global;
+  public $multiple;
 }

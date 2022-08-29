@@ -1,10 +1,10 @@
 entity_overview.list:
-  route_name: entity_overview.list
-  base_route: entity_overview.list
+  route_name: entity.entity_overview.collection
+  base_route: entity.entity_overview.collection
   title: Overviews
 
 entity_overview.settings:
   route_name: entity_overview.settings
-  base_route: entity_overview.list
+  base_route: entity.entity_overview.collection
   title: Settings
   weight: 50

@@ -12,6 +12,7 @@ use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Extension\ModuleHandler;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
+use Drupal\entity_overview\Entity\Overview;
 
 class OverviewManager {
 
@@ -52,6 +53,12 @@ class OverviewManager {
    */
   private ModuleHandler $moduleHandler;
 
+  protected const baseFields = [
+    'count',
+    'sort',
+    'pagination'
+  ];
+
   function __construct(EntityTypeManagerInterface $entityTypeManager, ConfigFactoryInterface $configFactory, EntityFieldManagerInterface $entityFieldManager, EntityTypeBundleInfoInterface $entityTypeBundleInfo, EngineManager $engineManager, ModuleHandler $moduleHandler) {
     $this->entityTypeManager = $entityTypeManager;
     $this->entityFieldManager = $entityFieldManager;
@@ -66,11 +73,10 @@ class OverviewManager {
    * @return array
    */
   public function getOverviewConfigs() {
-    $list = $this->configFactory->listAll('entity_overview.');
+    $overviews = Overview::loadMultiple();
     $result = [];
-    foreach ($list as $config_id) {
-      $config = $this->configFactory->get($config_id);
-      $result[$config->get('id')] = $config->get('label') ?? $config_id;
+    foreach ($overviews as $overview) {
+      $result[$overview->id()] = $overview->label();
     }
     return $result;
   }
@@ -78,99 +84,188 @@ class OverviewManager {
   /**
    * @param string $overview_id
    *
-   * @return array
-   * @deprecated Use getOverviewConfig() instead.
+   * @return \Drupal\entity_overview\Entity\Overview
    */
-  public function getEntityBundleConfig($entity_bundle) {
-    return $this->getOverviewConfig($entity_bundle);
+  public function getOverview($overview_id) {
+    $overviews = &drupal_static(__FUNCTION__, []);
+    if (!empty($overviews[$overview_id])) {
+      return $overviews[$overview_id];
+    }
+
+    $overviews[$overview_id] = Overview::load($overview_id);
+    return $overviews[$overview_id];
   }
 
   /**
-   * @param string $overview_id
+   * Returns list of all existing base fields.
+   *
+   * @return string[]
+   */
+  public function getBaseFields(): array {
+    return self::baseFields;
+  }
+
+  /**
+   * Returns info about a base field.
+   *
+   * @param string $field
    *
    * @return array
    */
-  public function getOverviewConfig($overview_id) {
-    $configs = &drupal_static(__FUNCTION__, []);
-    if (!empty($configs[$overview_id])) {
-      return $configs[$overview_id];
-    }
+  public function getBaseFieldInfo(Overview $overview, string $field): array {
+    return match ($field) {
+      'sort' => [
+          'label' => $this->t('Sort select'),
+          'widgets' => ['select'],
+          'base' => TRUE,
+          'requires facets' => FALSE,
+          'can be exposed' => TRUE
+        ],
+      'count' => [
+          'label' => $this->t('Page size select'),
+          'widgets' => ['select'],
+          'base' => TRUE,
+          'requires facets' => FALSE,
+          'can be exposed' => TRUE
+        ],
+      'pagination' => [
+          'label' => $this->t('Pagination'),
+          'widgets' => ['checkbox'],
+          'base' => TRUE,
+          'requires facets' => TRUE,
+          'can be exposed' => FALSE
+        ],
+      default => []
+    };
+  }
 
-    $configs[$overview_id] = $this->configFactory->get('entity_overview.' . $overview_id)->getRawData();
-    return $configs[$overview_id];
+  public function getBaseFieldElement(OverviewFilter $filter, string $field) {
+    return match ($field) {
+      'sort' => [
+        '#type' => 'select',
+        '#title' => $this->t('Sort select'),
+        '#options' => $filter->getOverview()->getEngine()->getSortCriterias(),
+        '#default_value' => $filter->getSort()
+      ],
+      'count' => [
+        '#type' => 'select',
+        '#title' => $this->t('Page size select'),
+        '#options' => $this->getCountOptions($filter->getOverviewId()),
+        '#default_value' => $filter->getCount()
+      ],
+      'pagination' => [
+        '#type' => 'checkbox',
+        '#title' => $this->t('Pagination'),
+        '#description' => $this->t('Display pager at the bottom.'),
+        '#default_value' => $filter->hasPagination()
+      ],
+      default => [],
+    };
   }
 
   /**
-   * @param $overview_id
+   * @param \Drupal\entity_overview\OverviewFilter $filter
+   * @param string $field
+   *
    * @return array
    */
-  public function getFieldFormElements($overview_id) {
-    // TODO: Get more information from field definitions and cache it
-    $config = $this->getOverviewConfig($overview_id);
+  public function getFieldFormElement(OverviewFilter $filter, string $field): array {
+    if (in_array($field, $this->getBaseFields())) {
+      return $this->getBaseFieldElement($filter, $field);
+    } else {
+      return $filter->getOverview()->getEngine()->getFieldFormElement($filter, $field);
+    }
+  }
 
-    $elements = [];
-    foreach ($config['entity_bundles'] as $entity_type_id => $bundle_ids) {
-      foreach ($bundle_ids as $bundle_id) {
-        /** @var \Drupal\Core\Entity\EntityFieldManagerInterface $entityFieldManager */
-        $definitions = $this->entityFieldManager->getFieldDefinitions($entity_type_id, $bundle_id);
-        foreach ($config['fields'] as $field_name => $element_type) {
-          if (!isset($elements[$field_name]) && !empty($definitions[$field_name])) {
-            $elements[$field_name] = $this->getFieldFormElement($definitions[$field_name], $element_type);
+  /**
+   * @param \Drupal\entity_overview\Entity\Overview $overview
+   *
+   * @return array
+   */
+  public function getAllFieldInfos(Overview $overview) {
+    $info = [];
+    $defaults = [
+      'base' => FALSE,
+      'requires facets' => FALSE,
+      'can be exposed' => TRUE
+    ];
+    foreach ($this->getBaseFields() as $field) {
+      $info[$field] = $this->getBaseFieldInfo($overview, $field) + $defaults;
+    }
+    foreach ($overview->getFields() as $field => $widget) {
+      $info[$field] = $overview->getEngine()->getFieldInfo($overview, $field) + $defaults;
+    }
+    return $info;
+  }
+
+  public function buildOverviewFilterForm(OverviewFilter $filter, $allow_facets = TRUE) {
+    $overview = $filter->getOverview();
+    $form = [];
+    $field_info = $this->getAllFieldInfos($overview);
+
+    foreach ($field_info as $field => $info) {
+      if (!$info['requires facets']) {
+        if ($info['base']) {
+          $form[$field] = $this->getBaseFieldElement($filter, $field);
+        } else {
+          $form['fields'][$field] = $overview->getEngine()
+            ->getFieldFormElement($filter, $field);
+          if (empty($form['fields'][$field]['#description'])) {
+            $form['fields'][$field]['#description'] = $this->t('Default values');
           }
         }
       }
     }
 
-    return $elements;
-  }
-
-  /**
-   * @param \Drupal\Core\Field\FieldDefinitionInterface $definition
-   * @param string $element_type
-   *
-   * @return array
-   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
-   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
-   */
-  public function getFieldFormElement(FieldDefinitionInterface $definition, $element_type) {
-    $element = [
-      'form_element' => $element_type,
-    ];
-
-    switch ($definition->getType()) {
-      case 'entity_reference':
-        $settings = $definition->getSettings() ?? [];
-        $storage = $this->entityTypeManager->getStorage($settings['target_type']);
-        // TODO: Support more entity types than taxonomy
-        if ($settings['target_type'] == 'taxonomy_term') {
-          if (count($settings['handler_settings']['target_bundles']) == 1) {
-            $element['label'] = $definition->getLabel();
-            $element['source'] = 'taxonomy_term';
-            $element['options'] = [];
-            $vid = reset($settings['handler_settings']['target_bundles']);
-            $element['vid'] = $vid;
-            $query = $storage->getQuery();
-            $query->condition('vid', $vid)
-              ->sort($settings['handler_settings']['sort']['field'], $settings['handler_settings']['sort']['direction']);
-            $tids = $query->execute();
-            $terms = $storage->loadMultiple($tids);
-            foreach ($terms as $term) {
-              $element['options'][$term->id()] = $term->label();
-            }
-          } else {
-            \Drupal::logger('entity_overview')->error('Field %field is not supported by Entity Overview', ['%field' => $field_name]);
-            return [];
-          }
-        } else {
-          \Drupal::logger('entity_overview')->error('Field %field is not supported by Entity Overview', ['%field' => $field_name]);
-          return [];
+    if ($allow_facets) {
+      $facets_options = [];
+      foreach ($field_info as $field => $info) {
+        if ($info['can be exposed']) {
+          $facets_options[$field] = $info['label'];
         }
-        break;
-      default:
-        \Drupal::logger('entity_overview')->error('Field %field is not supported by Entity Overview', ['%field' => $field_name]);
-        return [];
+      }
+      if (!empty($facets_options)) {
+        $form['facets'] = [
+          '#type' => 'checkboxes',
+          '#title' => $this->t('Facets'),
+          '#description' => $this->t('Select the facets that you want to expose to the user.'),
+          '#options' => $facets_options,
+          '#default_value' => $filter->getFacets(),
+        ];
+      }
+
+      foreach ($field_info as $field => $info) {
+        if ($info['requires facets']) {
+          if ($info['base']) {
+            $form[$field] = $this->getBaseFieldElement($filter, $field);
+          } else {
+            $form['fields'][$field] = $overview->getEngine()
+              ->getFieldFormElement($filter, $field);
+          }
+        }
+      }
+    } else {
+      $form['facets'] = [
+        '#type' => 'hidden',
+        '#default_value' => '',
+      ];
+      foreach ($field_info as $field => $info) {
+        if ($info['requires facets']) {
+          if ($info['base']) {
+            $form[$field] = [
+              '#type' => 'hidden',
+              '#default_value' => FALSE,
+            ];
+          } else {
+            $form['fields'][$field] = [
+              '#type' => 'hidden',
+              '#default_value' => FALSE,
+            ];
+          }
+        }
+      }
     }
-    return $element;
+    return $form;
   }
 
   /**
@@ -204,9 +299,7 @@ class OverviewManager {
     return $types;
   }
 
-  public function getCountOptions($entity_bundle) {
-    return [
-  public function getCountOptions($entity_bundle) {
+  public function getCountOptions($overview_id) {
     $options = [
       5 => '5',
       10 => '10',
@@ -215,17 +308,8 @@ class OverviewManager {
       25 => '25'
     ];
 
-    $this->moduleHandler->alter('entity_overview_count_options', $options, $entity_bundle);
+    $this->moduleHandler->alter('entity_overview_count_options', $options, $overview_id);
     return $options;
-  }
-
-  /**
-   * Get list of supported sorting criteria
-   *
-   * @return array
-   */
-  public function getSortCriterias($overview_id) {
-    return $this->getEngine($overview_id)->getSortCriterias();
   }
 
   /**
@@ -238,75 +322,6 @@ class OverviewManager {
   }
 
   /**
-   * @param string $overview_id
-   *
-   * @return string
-   */
-  public function getLabel($overview_id) {
-    return $this->getOverviewConfig($overview_id)['label'] ?? $overview_id;
-  }
-
-  /**
-   * @param string $overview_id
-   *
-   * @return string|null
-   * @deprecated Use getEntityTypesAndBundles() instead
-   */
-  public function getEntityTypeID($overview_id) {
-    $entity_types = $this->getEntityTypesAndBundles($overview_id);
-    if (count($entity_types) !== 1) {
-      return NULL;
-    }
-    $entity_type_id = array_key_first($entity_types);
-    if (count($entity_types[$entity_type_id]) !== 1) {
-      return NULL;
-    }
-    return $entity_type_id;
-  }
-
-  /**
-   * @param string $overview_id
-   *
-   * @return string|null
-   * @deprecated Use getEntityTypesAndBundles() instead
-   */
-  public function getBundle($overview_id) {
-    $entity_type_id = $this->getEntityTypeID($overview_id);
-    if (empty($entity_type_id)) {
-      return NULL;
-    }
-    $entity_types = $this->getEntityTypesAndBundles($overview_id);
-    return reset($entity_types[$entity_type_id]) ?? NULL;
-  }
-
-  /**
-   * @param string $overview_id
-   *
-   * @return array
-   */
-  public function getEntityTypesAndBundles($overview_id) {
-    return $this->getOverviewConfig($overview_id)['entity_bundles'] ?? [];
-  }
-
-  /**
-   * @param string $overview_id
-   *
-   * @return string
-   */
-  public function getSortField($overview_id) {
-    return $this->getOverviewConfig($overview_id)['sort_field'] ?? 'created';
-  }
-
-  /**
-   * @param string $overview_id
-   *
-   * @return string
-   */
-  public function getShowTotal($overview_id) {
-    return $this->getOverviewConfig($overview_id)['show_total'] ?? '';
-  }
-
-  /**
    * @param $overview_id
    *
    * @return \Drupal\entity_overview\EngineInterface
@@ -315,43 +330,9 @@ class OverviewManager {
   public function getEngine($overview_id) {
     $engines = &drupal_static(__FUNCTION__, []);
     if (empty($engines[$overview_id])) {
-      $engine = $this->getOverviewConfig($overview_id)['engine'] ?? 'entity_query';
-      $engines[$overview_id] = $this->engineManager->createInstance($engine);
+      $engines[$overview_id] = $this->getOverview($overview_id)->getEngine();
     }
     return $engines[$overview_id];
-  }
-
-  /**
-   * @param string $overview_id
-   * @param array $filter
-   * @param int $page
-   *
-   * @return mixed
-   */
-  public function getResult($overview_id, array $filter = [], $page = 0) {
-    return $this->getEngine($overview_id)->getResult($overview_id, $filter, $page);
-  }
-
-  /**
-   * @param string $overview_id
-   * @param array $filter
-   * @param int $page
-   *
-   * @return EntityInterface[]
-   */
-  public function getEntities($overview_id, array $filter = [], $page = 0) {
-    return $this->getEngine($overview_id)->getEntities($overview_id, $filter, $page);
-  }
-
-  /**
-   * @param string $overview_id
-   * @param array $filter
-   * @param int $shown
-   *
-   * @return \Drupal\Core\StringTranslation\TranslatableMarkup
-   */
-  public function getEntitiesTotal($overview_id, array $filter = [], $shown = 0) {
-    return $this->getEngine($overview_id)->getEntitiesTotal($overview_id, $filter, $shown);
   }
 
   /**
@@ -364,25 +345,13 @@ class OverviewManager {
     return TRUE;
   }
 
-  public function getBaseFacets($overview_id): array {
-    return $this->getEngine($overview_id)->getBaseFacets($overview_id);
-  }
-
-  public function getBaseFacetForm($entity_bundle, $facet, ?string $default_value): array {
-    return $this->getEngine($entity_bundle)->getBaseFacetForm($entity_bundle, $facet, $default_value);
-  }
-
-  public function getCacheableMetadata($overview_id, bool $has_facets): CacheableMetadata {
-    return $this->getEngine($overview_id)->getCacheableMetadata($overview_id, $has_facets);
-  }
-
   /**
    * @param \Drupal\Core\Entity\EntityInterface[] $entities
    * @param string $view_mode
    *
    * @return array
    */
-  public function buildEntitiesWithViewmode(array $entities, $view_mode) {
+  public function buildEntitiesWithViewmode(array $entities, string $view_mode) {
     $types = [];
     foreach ($entities as $key => $entity) {
       if (!isset($types[$entity->getEntityTypeId()])) {
@@ -391,8 +360,8 @@ class OverviewManager {
       $types[$entity->getEntityTypeId()][$entity->id()] = $entity;
     }
     $views = [];
-    foreach ($types as $entity_type_id => $entities) {
-      $views[$entity_type_id] = $this->entityTypeManager->getViewBuilder($entity_type_id)->viewMultiple($entities, $view_mode);
+    foreach ($types as $entity_type_id => $entity_type_entities) {
+      $views[$entity_type_id] = $this->entityTypeManager->getViewBuilder($entity_type_id)->viewMultiple($entity_type_entities, $view_mode);
     }
     $build = [];
     foreach ($entities as $key => $entity) {
