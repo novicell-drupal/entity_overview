@@ -63,7 +63,7 @@ class OverviewFilter {
    * @return mixed
    */
   public function getFieldValue(string $field): mixed {
-    return $this->fields[$field];
+    return $this->fields[$field] ?? NULL;
   }
 
   /**
@@ -347,7 +347,10 @@ class OverviewFilter {
         $values['fields'][$field_name] = '';
       }
     }
-    $values['pagination'] = boolval($values['pagination']);
+    $values['pagination'] = boolval($values['pagination'] ?? FALSE);
+    if (!empty($values['view_mode'])) {
+      $values['view_mode'] = strval($values['view_mode']);
+    }
 
     return new self($overview_id, $values);
   }

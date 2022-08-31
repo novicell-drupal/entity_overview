@@ -6,6 +6,7 @@ use Drupal\Core\Ajax\HtmlCommand;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\entity_overview\Form\OverviewFilterForm;
+use Drupal\entity_overview\OverviewFilter;
 use Drupal\entity_overview\OverviewManager;
 use Drupal\node\Entity\Node;
 use Drupal\relewise\DataTypes\Search\Sorting\Content\ContentAttributeSorting;
@@ -24,29 +25,20 @@ class OverviewSearchPageForm extends OverviewFilterForm {
   /**
    * @inheritDoc
    */
-  public function buildForm(array $form, FormStateInterface $form_state, array $options = []) {
+  public function buildForm(array $form, FormStateInterface $form_state, OverviewFilter $filter = NULL) {
     $config = $this->config('entity_overview_search.settings');
     $overview_id = $config->get('overview') ?? NULL;
     if (empty($overview_id)) {
       return [];
     }
+    $filter = new OverviewFilter($overview_id, $config->get('filter') ?? []);
+    $overview = $filter->getOverview();
 
-    $overview = $this->overviewManager->getOverviewConfig($overview_id);
+    $filter->setFieldValues([]);
+    $filter->setPagination(TRUE);
+    $filter->setShowTotal($overview->getShowTotal());
 
-    $options = $config->getRawData();
-    $options['fields'] = [];
-    foreach ($overview['fields'] as $field => $value) {
-      $options['fields'][$field] = [];
-    }
-    foreach ($options['facets'] as $facet) {
-      if (!isset($options[$facet])) {
-        $options[$facet] = NULL;
-      }
-    }
-    $options['pagination'] = TRUE;
-    $options['show_total'] = $overview['show_total'];
-
-    $form = parent::buildForm($form, $form_state, $options);
+    $form = parent::buildForm($form, $form_state, $filter);
 
     $form['#cache']['max-age'] = 0;
 
@@ -73,13 +65,13 @@ class OverviewSearchPageForm extends OverviewFilterForm {
    * @param EntityInterface[] $entities
    * @param array $options
    */
-  protected function buildEntitiesInContent(array &$content, array $entities, array $options) {
+  protected function buildEntitiesInContent(array &$content, array $entities, OverviewFilter $filter) {
     if (empty($entities)) {
       $content['content'] = [
         '#markup' => $this->t('Your search yielded no results.')->__toString()
       ];
     } else {
-      parent::buildEntitiesInContent($content, $entities, $options);
+      parent::buildEntitiesInContent($content, $entities, $filter);
     }
   }
 

@@ -30,6 +30,9 @@ msgstr "Overbliksfilter"
 msgid "Overview configuration"
 msgstr "Overblikskonfiguration"
 
+msgid "A short name to help you identify this overview in the overview list."
+msgstr "Et kort navn til at hjælpe med at identificere dette overblik i overblikslisten."
+
 msgid "Field with filter and display options for entities."
 msgstr "Felt med filter og visningsindstillinger til entiteter."
 
@@ -83,6 +86,12 @@ msgstr "Side størrelses valg"
 
 msgid "What criteria to sort entities by."
 msgstr "Hvilket kriterie skal elementer sorteres efter."
+
+msgid "View mode used to display search results."
+msgstr "View mode brugt til at vise søge resultater."
+
+msgid "What fields can be used as facets?"
+msgstr "Hvilke felter kan bruges som facetter?"
 
 msgid "Sort select"
 msgstr "Sorterings valg"

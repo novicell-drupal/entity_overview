@@ -315,10 +315,14 @@ class OverviewManager {
   /**
    * @return array
    */
-  public function getViewModes() {
+  public function getViewModes(Overview $overview = NULL) {
     /** @var \Drupal\Core\Entity\EntityDisplayRepositoryInterface $repository */
     $repository = \Drupal::service('entity_display.repository');
-    return $repository->getViewModeOptionsByBundle('node', 'page');
+    if (empty($overview)) {
+      return $repository->getViewModeOptionsByBundle('node', 'page');
+    } else {
+      return $repository->getViewModeOptionsByBundle('node', 'article');
+    }
   }
 
   /**

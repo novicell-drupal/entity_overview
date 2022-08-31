@@ -76,7 +76,7 @@ class OverviewEditForm extends EntityForm {
       '#maxlength' => 255,
       '#default_value' => $this->entity->label(),
       '#required' => TRUE,
-      '#description' => $this->t('A short name to help you identify this rule in the rules list.'),
+      '#description' => $this->t('A short name to help you identify this overview in the overview list.'),
     ];
 
     $form['id'] = [
@@ -130,7 +130,7 @@ class OverviewEditForm extends EntityForm {
       $engine = $this->entity->getEngine();
       $form['engine_item'] = [
         '#type' => 'item',
-        '#title' => $this->t('Engine'),
+        '#title' => $this->t('Search engine'),
         '#description' => $engine->label()
       ];
 
@@ -139,7 +139,7 @@ class OverviewEditForm extends EntityForm {
       $form['entity_bundles_item'] = [
         '#type' => 'item',
         '#title' => $this->t('Entity types'),
-        '#description' => [],
+        '#description' => '',
         '#default_value' => $bundles
       ];
       foreach ($entity_types as $entity_type) {
@@ -147,11 +147,11 @@ class OverviewEditForm extends EntityForm {
         if (empty($bundles[$entity_type_id])) {
           continue;
         }
+        $bundle_labels = [];
         foreach ($bundles[$entity_type_id] as $bundle) {
-          $form['entity_bundles_item']['#description'][] = [
-            '#markup' => $entity_types[$entity_type_id]['bundles'][$bundle]['label']
-          ];
+          $bundle_labels[] = $entity_types[$entity_type_id]['label'] . ' (' . $entity_types[$entity_type_id]['bundles'][$bundle]['label'] . ')';
         }
+        $form['entity_bundles_item']['#description'] = implode(', ', $bundle_labels);
       }
 
       $form['fields'] = [

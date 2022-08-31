@@ -55,6 +55,20 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
   /**
    * @inheritDoc
    */
+  public function supportsSearchTermRecommendations(): bool {
+    return $this->pluginDefinition['recommendations'] ?? FALSE;
+  }
+
+  /**
+   * @inheritDoc
+   */
+  public function getResultObject(OverviewFilter $filter): OverviewResultInterface {
+    return new OverviewResult($filter);
+  }
+
+  /**
+   * @inheritDoc
+   */
   public function getCacheableMetadata(OverviewFilter $filter, bool $has_facets): CacheableMetadata {
     $cache = new CacheableMetadata();
     if ($has_facets) {
@@ -131,13 +145,13 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
         $form = [
           '#type' => 'textfield',
           '#title' => $this->t('Search terms'),
-          '#default_value' => $default_value ?? ''
+          '#default_value' => $filter->getFieldValue($field) ?? ''
         ];
         break;
       case 'owner':
         $user = NULL;
-        if (!empty($default_value)) {
-          $user = \Drupal::entityTypeManager()->getStorage('user')->load($default_value);
+        if (!empty($filter->getFieldValue($field))) {
+          $user = \Drupal::entityTypeManager()->getStorage('user')->load($filter->getFieldValue($field));
         }
         $form = [
           '#type' => 'entity_autocomplete',
@@ -236,7 +250,7 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
           if ($settings['target_type'] == 'taxonomy_term') {
             if (count($settings['handler_settings']['target_bundles']) == 1) {
               $element['#title'] = $definition->getLabel();
-              $element['#default_value'] = $filter->getFieldValue($field);
+              $element['#default_value'] = $filter->getFieldValue($field) ?? [];
               $element['#options'] = [];
               $vid = reset($settings['handler_settings']['target_bundles']);
               $query = $storage->getQuery();

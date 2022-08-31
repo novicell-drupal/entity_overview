@@ -48,7 +48,7 @@ class OverviewListBuilder extends DraggableListBuilder {
    */
   public function buildHeader() {
     $header['label'] = $this->t('Label');
-    $header['engine'] = $this->t('Engine');
+    $header['engine'] = $this->t('Search engine');
     $header['entity_bundles'] = $this->t('Entity types');
     return $header + parent::buildHeader();
   }
@@ -61,13 +61,14 @@ class OverviewListBuilder extends DraggableListBuilder {
     $row['label'] = $entity->label();
     $row['engine'] = $entity->getEngine()->label();
 
-    $row['entity_bundles']['#theme'] = 'item_list';
+    $entity_bundles = [];
     $entity_types = $this->manager->getSupportedEntityTypes();
     foreach ($entity->getEntityBundles() as $entity_type => $bundles) {
       foreach ($bundles as $bundle) {
-        $row['entity_bundles']['#items'][] = $entity_types[$entity_type]['bundles'][$bundle]['label'] . ' (' . $entity_types[$entity_type]['label'] . ')';
+        $entity_bundles[] = $entity_types[$entity_type]['label'] . ' (' . $entity_types[$entity_type]['bundles'][$bundle]['label'] . ')';
       }
     }
+    $row['entity_bundles'] = implode('<br>', $entity_bundles);
     return $row + parent::buildRow($entity);
   }
 }

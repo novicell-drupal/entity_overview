@@ -24,7 +24,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *    "sort",
  *    "pagination"
  *  },
- *  multiple = false
+ *  multiple = false,
+ *  recommendations = false
  * )
  */
 class EntityQueryEngine extends EngineBase {

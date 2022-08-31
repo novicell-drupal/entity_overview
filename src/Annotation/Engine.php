@@ -48,4 +48,11 @@ class Engine extends Plugin {
    * @var boolean
    */
   public $multiple;
+
+  /**
+   * Whether the plugin supports search term recommendations.
+   *
+   * @var boolean
+   */
+  public $recommendations;
 }

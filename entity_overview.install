@@ -25,20 +25,30 @@ function entity_overview_update_9001() {
 /**
  * Update configurations to support multiple entity types
  */
-function entity_overview_update_9003() {
+function entity_overview_update_9004() {
   $config_factory = \Drupal::configFactory();
-  /** @var EntityTypeBundleInfoInterface $entityTypeBundleInfo */
-  $entityTypeBundleInfo = \Drupal::service('entity_type.bundle.info');
   $list = $config_factory->listAll('entity_overview.');
   foreach ($list as $config_id) {
-    $config = $config_factory->getEditable($config_id);
-    if (!$config->isNew() && !empty($config->get('entity_type_id')) && !empty($config->get('bundle'))) {
-      $bundle_info = $entityTypeBundleInfo->getBundleInfo($config->get('entity_type_id'));
-      $config->set('label', $bundle_info[$config->get('bundle')]['label']);
-      $config->set('entity_bundles', [$config->get('entity_type_id') => [$config->get('bundle')]]);
-      $config->clear('entity_type_id');
-      $config->clear('bundle');
-      $config->save();
+    $old_config = $config_factory->getEditable($config_id);
+    $id = str_replace('.', '_', $old_config->get('id'));
+    /** @var \Drupal\entity_overview\Entity\Overview $new_config */
+    $new_config = \Drupal\entity_overview\Entity\Overview::create([
+      'id' => $id,
+      'label' => $old_config->get('label')
+    ]);
+    $new_config->setEngineID($old_config->get('engine') ?? 'entity_query');
+    if (empty($old_config->get('entity_bundles'))) {
+      $entity_bundles = [
+        $old_config->get('entity_type_id') => [$old_config->get('bundle')]
+      ];
+      $new_config->setEntityBundles($entity_bundles);
+    } else {
+      $new_config->setEntityBundles($old_config->get('entity_bundles') ?? []);
     }
+    $new_config->setFields($old_config->get('fields') ?? []);
+    $new_config->setSortField($old_config->get('sort_field') ?? []);
+    $new_config->setShowTotal($old_config->get('show_total') ?? []);
+    $new_config->save();
+    $old_config->delete();
   }
 }
