@@ -363,13 +363,21 @@ class OverviewManager {
       }
       $types[$entity->getEntityTypeId()][$entity->id()] = $entity;
     }
-    $views = [];
-    foreach ($types as $entity_type_id => $entity_type_entities) {
-      $views[$entity_type_id] = $this->entityTypeManager->getViewBuilder($entity_type_id)->viewMultiple($entity_type_entities, $view_mode);
-    }
-    $build = [];
-    foreach ($entities as $key => $entity) {
-      $build[$key] = $views[$entity->getEntityTypeId()][$entity->id()];
+
+    if (count($types) == 1) {
+      $build = $this->entityTypeManager->getViewBuilder(array_key_first($types))->viewMultiple($entities, $view_mode);
+    } else {
+      $views = [];
+      foreach ($types as $entity_type_id => $entity_type_entities) {
+        foreach ($entity_type_entities as $key => $entity) {
+          $views[$entity_type_id][$key] = $this->entityTypeManager->getViewBuilder($entity_type_id)
+            ->view($entity, $view_mode);
+        }
+      }
+      $build = [];
+      foreach ($entities as $key => $entity) {
+        $build[$key] = $views[$entity->getEntityTypeId()][$entity->id()];
+      }
     }
     return $build;
   }

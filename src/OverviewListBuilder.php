@@ -68,7 +68,7 @@ class OverviewListBuilder extends DraggableListBuilder {
         $entity_bundles[] = $entity_types[$entity_type]['label'] . ' (' . $entity_types[$entity_type]['bundles'][$bundle]['label'] . ')';
       }
     }
-    $row['entity_bundles'] = implode('<br>', $entity_bundles);
+    $row['entity_bundles'] = implode(', ', $entity_bundles);
     return $row + parent::buildRow($entity);
   }
 }
