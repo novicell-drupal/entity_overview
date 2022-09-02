@@ -18,4 +18,5 @@ msgstr ""
 msgid "Search results for “@keyword”"
 msgstr "Søgeresultater for “@keyword”"
 
-"View mode used to display search results."
+msgid "View mode used to display search results."
+msgstr "View mode brugt til at vise søge resultater."

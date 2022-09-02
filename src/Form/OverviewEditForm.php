@@ -158,7 +158,7 @@ class OverviewEditForm extends EntityForm {
         '#type' => 'checkboxes',
         '#title' => $this->t('Fields'),
         '#options' => $this->entity->getSupportedFieldsWithLabels($bundles),
-        '#description' => 'What fields can be used as facets?',
+        '#description' => $this->t('What fields can be used as facets?'),
         '#default_value' => array_keys($this->entity->getFields())
       ];
 

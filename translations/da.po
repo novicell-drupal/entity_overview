@@ -87,9 +87,6 @@ msgstr "Side størrelses valg"
 msgid "What criteria to sort entities by."
 msgstr "Hvilket kriterie skal elementer sorteres efter."
 
-msgid "View mode used to display search results."
-msgstr "View mode brugt til at vise søge resultater."
-
 msgid "What fields can be used as facets?"
 msgstr "Hvilke felter kan bruges som facetter?"
 
