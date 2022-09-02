@@ -7,6 +7,7 @@ use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Field\FormatterBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\entity_overview\OverviewFilter;
 use Drupal\entity_overview\OverviewManager;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -68,13 +69,20 @@ class OverviewListFormatter extends FormatterBase {
    * {@inheritdoc}
    */
   public function viewElements(FieldItemListInterface $items, $langcode) {
-    $elements = [];
-
-    foreach ($items as $delta => $item) {
+    $overview_id = $items->getSetting('overview');
+    if (empty($overview_id)) {
       $entity_bundle = $items->getSetting('entity_bundle');
-      $entities = $this->overviewManager->getEntities($entity_bundle, $item->getValue());
-      $elements[$delta] = $this->entityTypeManager->getViewBuilder($this->overviewManager->getEntityTypeID($entity_bundle))->viewMultiple($entities, $this->getSetting('view_mode'));
-      $elements[$delta]['#cache']['tags'][] = $this->overviewManager->getEntityTypeID($entity_bundle) . '_list';
+      $overview_id = str_replace('node.', '', $entity_bundle);
+    }
+
+    $elements = [];
+    foreach ($items as $delta => $item) {
+      $filter = new OverviewFilter($overview_id, $item->getValue());
+      $filter->setViewMode($this->getSetting('view_mode'));
+      $result = $filter->getOverview()->getResultObject($filter);
+
+      $elements[$delta] = $this->overviewManager->buildEntitiesWithViewmode($result->getEntities(), $this->getSetting('view_mode'));
+      $result->getCacheableMetadata()->applyTo($elements[$delta]);
     }
 
     return $elements;
