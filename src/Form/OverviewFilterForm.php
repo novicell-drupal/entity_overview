@@ -8,6 +8,7 @@ use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
 use Drupal\entity_overview\OverviewFilter;
+use Drupal\entity_overview\OverviewResultInterface;
 use Drupal\html5history\Ajax\HistoryReplaceStateCommand;
 use Drupal\entity_overview\OverviewManager;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -22,6 +23,8 @@ class OverviewFilterForm extends FormBase {
    * @var OverviewManager
    */
   protected $overviewManager;
+
+  protected ?OverviewResultInterface $result = NULL;
 
   /**
    * @var Request
@@ -70,7 +73,6 @@ class OverviewFilterForm extends FormBase {
       $form['#attached']['library'] = array_merge($form['#attached']['library'] ?? [], ['html5history/html5history.ajax']);
       $filter->fetchRequestValues($this->request);
     }
-    $overview->getCacheableMetadata($filter, !empty($filter->getFacets()))->applyTo($form);
 
     $filter->updateFormState($form_state);
 
@@ -134,6 +136,12 @@ class OverviewFilterForm extends FormBase {
       ];
     }
 
+    if (empty($this->result)) {
+      $overview->getCacheableMetadata($filter, !empty($filter->getFacets()))->applyTo($form);
+    } else {
+      $this->result->getCacheableMetadata()->applyTo($form);
+    }
+
     return $form;
   }
 
@@ -160,9 +168,7 @@ class OverviewFilterForm extends FormBase {
     $this->buildEntitiesInContent($content, $entities, $filter);
 
     if (!empty($filter->getShowTotal())) {
-      $content['total'] = [
-        '#markup' => $this->getEntitiesTotal($filter, count($entities))
-      ];
+      $content['total'] = $this->getEntitiesTotal($filter, count($entities));
     }
 
     if ($filter->hasPagination()) {
@@ -183,7 +189,8 @@ class OverviewFilterForm extends FormBase {
    * @return \Drupal\Core\Entity\EntityInterface[]
    */
   protected function getEntitiesForBuilding(OverviewFilter $filter) {
-    return $filter->getOverview()->getEntities($filter);
+    $this->result = $filter->getOverview()->getResultObject($filter);
+    return $this->result->getEntities();
   }
 
   /**
@@ -192,10 +199,19 @@ class OverviewFilterForm extends FormBase {
    * @param \Drupal\entity_overview\OverviewFilter $filter
    * @param int $shown
    *
-   * @return \Drupal\Core\StringTranslation\TranslatableMarkup
+   * @return array
    */
   protected function getEntitiesTotal(OverviewFilter $filter, $shown) {
-    return $filter->getOverview()->getEntitiesTotal($filter, $shown);
+    if (empty($this->result)) {
+      return [
+        '#markup' => $filter->getOverview()
+          ->getEntitiesTotal($filter, $shown)
+      ];
+    } else {
+      return [
+        '#markup' => $this->result->getTotalsText()
+      ];
+    }
   }
 
   /**

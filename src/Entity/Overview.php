@@ -225,9 +225,16 @@ class Overview extends ConfigEntityBase implements OverviewInterface {
   }
 
   /**
-   * @param string $overview_id
-   * @param array $filter
-   * @param int $page
+   * @param \Drupal\entity_overview\OverviewFilter $filter
+   *
+   * @return \Drupal\entity_overview\OverviewResultInterface
+   */
+  public function getResultObject(OverviewFilter $filter) {
+    return $this->getEngine()->getResultObject($filter);
+  }
+
+  /**
+   * @param \Drupal\entity_overview\OverviewFilter $filter
    *
    * @return mixed
    */
@@ -236,9 +243,7 @@ class Overview extends ConfigEntityBase implements OverviewInterface {
   }
 
   /**
-   * @param string $overview_id
-   * @param array $filter
-   * @param int $page
+   * @param \Drupal\entity_overview\OverviewFilter $filter
    *
    * @return EntityInterface[]
    */
@@ -247,8 +252,7 @@ class Overview extends ConfigEntityBase implements OverviewInterface {
   }
 
   /**
-   * @param string $overview_id
-   * @param array $filter
+   * @param \Drupal\entity_overview\OverviewFilter $filter
    * @param int $shown
    *
    * @return \Drupal\Core\StringTranslation\TranslatableMarkup
