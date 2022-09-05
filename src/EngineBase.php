@@ -2,7 +2,10 @@
 
 namespace Drupal\entity_overview;
 
+use Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException;
+use Drupal\Component\Plugin\Exception\PluginNotFoundException;
 use Drupal\Component\Plugin\PluginBase;
+use Drupal\Core\Cache\Cache;
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\PageCache\ResponsePolicy\KillSwitch;
@@ -62,8 +65,38 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
   /**
    * @inheritDoc
    */
-  public function getResultObject(OverviewFilter $filter): OverviewResultInterface {
+  public function getOverviewResult(OverviewFilter $filter): OverviewResultInterface {
     return new OverviewResult($filter);
+  }
+
+  /**
+   * @param \Drupal\entity_overview\OverviewFilter $filter
+   *
+   * @return int
+   */
+  public function getTotalCount(OverviewFilter $filter) {
+    $overview = $filter->getOverview();
+    $keys = $this->entityTypeManager->getDefinition($this->getEntityTypeID($overview))->getKeys();
+    $cid = 'entity_overview:' . $overview->id() . '_total';
+    $cache = \Drupal::cache()->get($cid);
+    if ($cache === FALSE) {
+      try {
+        $query = $this->entityTypeManager->getStorage($this->getEntityTypeID($overview))
+          ->getQuery()
+          ->condition($keys['bundle'], $this->getBundles($overview), 'IN')
+          ->condition('status', 1)
+          ->count();
+        $total = $query->execute();
+      } catch (InvalidPluginDefinitionException $e) {
+        $total = 0;
+      } catch (PluginNotFoundException $e) {
+        $total = 0;
+      }
+      \Drupal::cache()->set($cid, $total, Cache::PERMANENT, [$this->getEntityTypeID($overview) . '_list']);
+    } else {
+      $total = $cache->data;
+    }
+    return $total;
   }
 
   /**

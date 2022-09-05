@@ -7,6 +7,7 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\entity_overview\EngineInterface;
 use Drupal\entity_overview\OverviewFilter;
 use Drupal\entity_overview\OverviewInterface;
+use Drupal\entity_overview\OverviewResultInterface;
 
 /**
  * Defines the overview entity.
@@ -229,39 +230,20 @@ class Overview extends ConfigEntityBase implements OverviewInterface {
    *
    * @return \Drupal\entity_overview\OverviewResultInterface
    */
-  public function getResultObject(OverviewFilter $filter) {
-    return $this->getEngine()->getResultObject($filter);
+  public function getOverviewResult(OverviewFilter $filter) {
+    return $this->getEngine()->getOverviewResult($filter);
   }
 
-  /**
-   * @param \Drupal\entity_overview\OverviewFilter $filter
-   *
-   * @return mixed
-   */
-  public function getResult(OverviewFilter $filter) {
-    return $this->getEngine()->getResult($filter);
-  }
-
-  /**
-   * @param \Drupal\entity_overview\OverviewFilter $filter
-   *
-   * @return EntityInterface[]
-   */
-  public function getEntities(OverviewFilter $filter) {
-    return $this->getEngine()->getEntities($filter);
-  }
-
-  /**
-   * @param \Drupal\entity_overview\OverviewFilter $filter
-   * @param int $shown
-   *
-   * @return \Drupal\Core\StringTranslation\TranslatableMarkup
-   */
-  public function getEntitiesTotal(OverviewFilter $filter, $shown = 0) {
-    return $this->getEngine()->getEntitiesTotal($filter, $shown);
-  }
-
-  public function getCacheableMetadata(OverviewFilter $filter, bool $has_facets): CacheableMetadata {
-    return $this->getEngine()->getCacheableMetadata($filter, $has_facets);
+  public function getTotalsText(OverviewResultInterface $result) {
+    switch ($this->getShowTotal()) {
+      case 'results':
+        return $this->t('@count result found', ['@count' => $result->getResultsCount()]);
+      case 'shown':
+        return $this->t('Showing @count out of @total', ['@count' => $result->getShownCount(), '@total' => $result->getResultsCount()]);
+      case 'filtered':
+        return $this->t('Showing @count out of @total', ['@count' => $result->getResultsCount(), '@total' => $result->getTotalCount()]);
+      default:
+        return '';
+    }
   }
 }

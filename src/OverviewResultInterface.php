@@ -21,11 +21,25 @@ interface OverviewResultInterface {
   public function getEntities(): array;
 
   /**
-   * Get "total" text for the search result.
+   * Get amount of hits shown for the search result.
    *
    * @return string|\Drupal\Core\StringTranslation\TranslatableMarkup
    */
-  public function getTotalsText();
+  public function getShownCount();
+
+  /**
+   * Get the count of hits for the search result.
+   *
+   * @return string|\Drupal\Core\StringTranslation\TranslatableMarkup
+   */
+  public function getResultsCount();
+
+  /**
+   * Get the total count of possible hits for the search result.
+   *
+   * @return string|\Drupal\Core\StringTranslation\TranslatableMarkup
+   */
+  public function getTotalCount();
 
   /**
    * Returns an array of search term recommendations.

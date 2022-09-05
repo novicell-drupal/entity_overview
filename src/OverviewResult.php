@@ -40,13 +40,6 @@ class OverviewResult implements OverviewResultInterface {
   /**
    * @inheritDoc
    */
-  public function getTotalsText() {
-    return $this->engine->getEntitiesTotal($this->filter, $this->shown);
-  }
-
-  /**
-   * @inheritDoc
-   */
   public function getRecommendations(): array {
     return [];
   }
@@ -56,6 +49,27 @@ class OverviewResult implements OverviewResultInterface {
    */
   public function getCacheableMetadata(): CacheableMetadata {
     return $this->engine->getCacheableMetadata($this->filter, (count($this->filter->getFacets()) > 0));
+  }
+
+  public function getShownCount() {
+    return $this->shown;
+  }
+
+  public function getResultsCount() {
+    $filter = clone $this->filter;
+    $filter->setPagination(FALSE);
+    $filter->setCount(0);
+    $entities = $this->engine->getEntities($filter);
+    return count($entities);
+  }
+
+  public function getTotalCount() {
+    $filter = clone $this->filter;
+    $filter->setFieldValues([]);
+    $filter->setPagination(FALSE);
+    $filter->setCount(0);
+    $entities = $this->engine->getEntities($filter);
+    return count($entities);
   }
 
 }

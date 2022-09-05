@@ -312,6 +312,15 @@ class OverviewManager {
     return $options;
   }
 
+  public function getShowTotalOptions(): array {
+    return [
+      '' => $this->t('None'),
+      'results' => $this->t('Filtered search results'),
+      'filtered' => $this->t('Filtered out of total number of items'),
+      'shown' => $this->t('Shown items out of filtered number of items'),
+    ];
+  }
+
   /**
    * @return array
    */

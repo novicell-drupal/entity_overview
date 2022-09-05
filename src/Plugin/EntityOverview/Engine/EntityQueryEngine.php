@@ -10,8 +10,10 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\PageCache\ResponsePolicy\KillSwitch;
 use Drupal\entity_overview\EngineBase;
 use Drupal\entity_overview\Entity\Overview;
+use Drupal\entity_overview\EntityQueryOverviewResult;
 use Drupal\entity_overview\OverviewFilter;
 use Drupal\entity_overview\OverviewManager;
+use Drupal\entity_overview\OverviewResultInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -47,6 +49,13 @@ class EntityQueryEngine extends EngineBase {
       $container->get('page_cache_kill_switch'),
       $container->get('entity_type.manager')
     );
+  }
+
+  /**
+   * @inheritDoc
+   */
+  public function getOverviewResult(OverviewFilter $filter): OverviewResultInterface {
+    return new EntityQueryOverviewResult($this, $filter);
   }
 
   /**
@@ -94,9 +103,6 @@ class EntityQueryEngine extends EngineBase {
     return $query->execute();
   }
 
-  /**
-   * @inheritDoc
-   */
   public function getEntities(OverviewFilter $filter): array {
     $overview = $filter->getOverview();
     if (empty($this->getEntityTypeID($overview))) {
@@ -106,6 +112,11 @@ class EntityQueryEngine extends EngineBase {
     if (empty($ids)) {
       return [];
     }
+    return $this->loadEntities($filter, $ids);
+  }
+
+  public function loadEntities(OverviewFilter $filter, array $ids): array {
+    $overview = $filter->getOverview();
     try {
       $storage = $this->entityTypeManager->getStorage($this->getEntityTypeID($overview));
     } catch (InvalidPluginDefinitionException $e) {
@@ -114,6 +125,28 @@ class EntityQueryEngine extends EngineBase {
       return [];
     }
     return $storage->loadMultiple($ids);
+  }
+
+  public function getResultsCount(OverviewFilter $filter) {
+    $overview = $filter->getOverview();
+    $keys = $this->entityTypeManager->getDefinition($this->getEntityTypeID($overview))->getKeys();
+    $query = $this->entityTypeManager->getStorage($this->getEntityTypeID($overview))->getQuery()
+      ->condition($keys['bundle'], $this->getBundles($overview), 'IN')
+      ->condition('status', 1)
+      ->count();
+    foreach ($filter->getFieldValues() as $field_name => $value) {
+      if (empty($value)) {
+        continue;
+      }
+      if ($field_name == 'owner') {
+        $query->condition($keys['owner'], $value);
+      } elseif (is_array($value)) {
+        $query->condition($field_name, $value, 'IN');
+      } else {
+        $query->condition($field_name, $value);
+      }
+    }
+    return $query->execute();
   }
 
   /**
@@ -125,6 +158,25 @@ class EntityQueryEngine extends EngineBase {
     $count = 0;
     $total = 0;
     switch ($filter->getShowTotal()) {
+      case 'results':
+        $query = $this->entityTypeManager->getStorage($this->getEntityTypeID($overview))->getQuery()
+          ->condition($keys['bundle'], $this->getBundles($overview), 'IN')
+          ->condition('status', 1)
+          ->count();
+        foreach ($filter->getFieldValues() as $field_name => $value) {
+          if (empty($value)) {
+            continue;
+          }
+          if ($field_name == 'owner') {
+            $query->condition($keys['owner'], $value);
+          } elseif (is_array($value)) {
+            $query->condition($field_name, $value, 'IN');
+          } else {
+            $query->condition($field_name, $value);
+          }
+        }
+        $total = $query->execute();
+        return $this->t('@count result found', ['@count' => $total]);
       case 'filtered':
         $query = $this->entityTypeManager->getStorage($this->getEntityTypeID($overview))->getQuery()
           ->condition($keys['bundle'], $this->getBundles($overview), 'IN')
@@ -181,20 +233,9 @@ class EntityQueryEngine extends EngineBase {
    */
   public function getSortCriterias(): array {
     return [
-      'newest' => t('Newest first'),
-      'oldest' => t('Oldest first'),
-      'alphabetical' => t('Alphabetical'),
-    ];
-  }
-
-  /**
-   * @inheritDoc
-   */
-  public function getShowTotalOptions(): array {
-    return [
-      '' => t('None'),
-      'filtered' => t('Filtered out of total number of items'),
-      'shown' => t('Shown items out of filtered number of items'),
+      'newest' => $this->t('Newest first'),
+      'oldest' => $this->t('Oldest first'),
+      'alphabetical' => $this->t('Alphabetical'),
     ];
   }
 

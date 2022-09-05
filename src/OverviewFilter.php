@@ -38,6 +38,9 @@ class OverviewFilter {
     if (isset($values['page'])) {
       $this->setPage($values['page'] ?? 0);
     }
+    if (isset($values['show_total'])) {
+      $this->setShowTotal($values['show_total'] ?? '');
+    }
     if (isset($values['view_mode'])) {
       $this->setViewMode($values['view_mode'] ?? 'teaser');
     }
@@ -350,6 +353,9 @@ class OverviewFilter {
     $values['pagination'] = boolval($values['pagination'] ?? FALSE);
     if (!empty($values['view_mode'])) {
       $values['view_mode'] = strval($values['view_mode']);
+    }
+    if (!empty($values['show_total'])) {
+      $values['show_total'] = strval($values['show_total']);
     }
 
     return new self($overview_id, $values);

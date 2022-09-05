@@ -58,7 +58,7 @@ class OverviewFilterForm extends FormBase {
    *
    * @param array $form
    * @param \Drupal\Core\Form\FormStateInterface $form_state
-   * @param array $filter
+   * @param \Drupal\entity_overview\OverviewFilter|null $filter
    *
    * @return array
    */
@@ -189,29 +189,20 @@ class OverviewFilterForm extends FormBase {
    * @return \Drupal\Core\Entity\EntityInterface[]
    */
   protected function getEntitiesForBuilding(OverviewFilter $filter) {
-    $this->result = $filter->getOverview()->getResultObject($filter);
-    return $this->result->getEntities();
+    return $this->getOverviewResult($filter)->getEntities();
   }
 
   /**
    * Function for getting total number of entities. Overwrite for when a custom query is necessary.
    *
    * @param \Drupal\entity_overview\OverviewFilter $filter
-   * @param int $shown
    *
    * @return array
    */
-  protected function getEntitiesTotal(OverviewFilter $filter, $shown) {
-    if (empty($this->result)) {
-      return [
-        '#markup' => $filter->getOverview()
-          ->getEntitiesTotal($filter, $shown)
-      ];
-    } else {
-      return [
-        '#markup' => $this->result->getTotalsText()
-      ];
-    }
+  protected function getEntitiesTotal(OverviewFilter $filter) {
+    return [
+      '#markup' => $filter->getOverview()->getTotalsText($this->getOverviewResult($filter))
+    ];
   }
 
   /**
@@ -270,5 +261,12 @@ class OverviewFilterForm extends FormBase {
       $response->addCommand(new HistoryReplaceStateCommand(NULL, NULL, $url->toString() . '?' . http_build_query($data)));
     }
     return $response;
+  }
+
+  protected function getOverviewResult(OverviewFilter $filter) {
+    if (empty($this->result)) {
+      $this->result = $filter->getOverview()->getOverviewResult($filter);
+    }
+    return $this->result;
   }
 }

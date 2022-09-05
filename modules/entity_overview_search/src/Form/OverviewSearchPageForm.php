@@ -34,7 +34,6 @@ class OverviewSearchPageForm extends OverviewFilterForm {
     $filter = new OverviewFilter($overview_id, $config->get('filter') ?? []);
     $overview = $filter->getOverview();
 
-    $filter->setFieldValues([]);
     $filter->setPagination(TRUE);
     $filter->setShowTotal($overview->getShowTotal());
 
