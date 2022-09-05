@@ -237,11 +237,11 @@ class Overview extends ConfigEntityBase implements OverviewInterface {
   public function getTotalsText(OverviewResultInterface $result) {
     switch ($this->getShowTotal()) {
       case 'results':
-        return $this->t('@count result found', ['@count' => $result->getResultsCount()]);
+        return t('@count result found', ['@count' => $result->getResultsCount()]);
       case 'shown':
-        return $this->t('Showing @count out of @total', ['@count' => $result->getShownCount(), '@total' => $result->getResultsCount()]);
+        return t('Showing @count out of @total', ['@count' => $result->getShownCount(), '@total' => $result->getResultsCount()]);
       case 'filtered':
-        return $this->t('Showing @count out of @total', ['@count' => $result->getResultsCount(), '@total' => $result->getTotalCount()]);
+        return t('Showing @count out of @total', ['@count' => $result->getResultsCount(), '@total' => $result->getTotalCount()]);
       default:
         return '';
     }
