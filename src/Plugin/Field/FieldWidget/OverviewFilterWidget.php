@@ -49,6 +49,9 @@ class OverviewFilterWidget extends WidgetBase {
     return new static($plugin_id, $plugin_definition, $configuration['field_definition'], $configuration['settings'], $configuration['third_party_settings'], $container->get('entity_overview.manager'));
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function formElement(FieldItemListInterface $items, $delta, array $element, array &$form, FormStateInterface $form_state) {
     /** @var FieldItemInterface $item */
     $item = $items[$delta] ?? [];
@@ -91,18 +94,23 @@ class OverviewFilterWidget extends WidgetBase {
     if (is_string($values['count'])) {
       $values['count'] = intval($values['count']);
     }
-    foreach ($values['fields'] as $field_name => $selections) {
-      if (is_array($selections)) {
-        $result = [];
-        foreach ($selections as $key => $value) {
-          if (!empty($value)) {
-            $result[] = $value;
+    if (is_array($values['fields'])) {
+      foreach ($values['fields'] as $field_name => $selections) {
+        if (is_array($selections)) {
+          $result = [];
+          foreach ($selections as $key => $value) {
+            if (!empty($value)) {
+              $result[] = $value;
+            }
           }
+          $values['fields'][$field_name] = $result;
         }
-        $values['fields'][$field_name] = $result;
-      } elseif (is_null($selections)) {
-        $values['fields'][$field_name] = '';
+        elseif (is_null($selections)) {
+          $values['fields'][$field_name] = '';
+        }
       }
+    } else {
+      $values['fields'] = [];
     }
     $values['pagination'] = boolval($values['pagination']);
 

@@ -200,7 +200,7 @@ class OverviewManager {
 
   public function buildOverviewFilterForm(OverviewFilter $filter, $allow_facets = TRUE) {
     $overview = $filter->getOverview();
-    $form = [];
+    $form = ['fields' => []];
     $field_info = $this->getAllFieldInfos($overview);
 
     foreach ($field_info as $field => $info) {
@@ -215,6 +215,12 @@ class OverviewManager {
           }
         }
       }
+    }
+    if (empty($form['fields'])) {
+      $form['fields'][0] = [
+        '#type' => 'hidden',
+        '#default_value' => NULL
+      ];
     }
 
     if ($allow_facets) {

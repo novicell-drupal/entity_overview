@@ -136,7 +136,9 @@ class OverviewFilterForm extends FormBase {
       ];
     }
 
-    $this->result->getCacheableMetadata()->applyTo($form);
+    if (!empty($this->result)) {
+      $this->result->getCacheableMetadata()->applyTo($form);
+    }
 
     return $form;
   }

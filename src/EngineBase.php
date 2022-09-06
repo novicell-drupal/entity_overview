@@ -176,7 +176,7 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
     switch ($field) {
       case 'text':
         $form = [
-          '#type' => 'textfield',
+          '#type' => 'search',
           '#title' => $this->t('Search terms'),
           '#default_value' => $filter->getFieldValue($field) ?? ''
         ];
