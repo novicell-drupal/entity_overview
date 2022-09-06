@@ -174,7 +174,7 @@ class OverviewEditForm extends EntityForm {
       $form['show_total'] = [
         '#type' => 'select',
         '#title' => t('Display of total number of items'),
-        '#options' => $engine->getShowTotalOptions(),
+        '#options' => $this->overviewManager->getShowTotalOptions(),
         '#default_value' => $this->entity->getShowTotal() ?? ''
       ];
     }
