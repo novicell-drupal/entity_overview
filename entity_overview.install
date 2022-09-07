@@ -1,6 +1,7 @@
 <?php
 
 use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
+use Drupal\entity_overview\Entity\Overview;
 
 /**
  * Update Entity Overview with engine plugin support
@@ -31,6 +32,9 @@ function entity_overview_update_9004() {
   foreach ($list as $config_id) {
     $old_config = $config_factory->getEditable($config_id);
     $id = str_replace('.', '_', $old_config->get('id'));
+    if (!empty(Overview::load($id))) {
+      continue;
+    }
     /** @var \Drupal\entity_overview\Entity\Overview $new_config */
     $new_config = \Drupal\entity_overview\Entity\Overview::create([
       'id' => $id,
