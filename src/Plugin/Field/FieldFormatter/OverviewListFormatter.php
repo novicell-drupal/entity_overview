@@ -79,7 +79,7 @@ class OverviewListFormatter extends FormatterBase {
     foreach ($items as $delta => $item) {
       $filter = new OverviewFilter($overview_id, $item->getValue());
       $filter->setViewMode($this->getSetting('view_mode'));
-      $result = $filter->getOverview()->getResultObject($filter);
+      $result = $filter->getOverview()->getOverviewResult($filter);
 
       $elements[$delta] = $this->overviewManager->buildEntitiesWithViewmode($result->getEntities(), $this->getSetting('view_mode'));
       $result->getCacheableMetadata()->applyTo($elements[$delta]);
