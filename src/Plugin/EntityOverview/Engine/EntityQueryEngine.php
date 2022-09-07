@@ -5,6 +5,7 @@ namespace Drupal\entity_overview\Plugin\EntityOverview\Engine;
 use Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException;
 use Drupal\Component\Plugin\Exception\PluginNotFoundException;
 use Drupal\Core\Cache\Cache;
+use Drupal\Core\DependencyInjection\DependencySerializationTrait;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\PageCache\ResponsePolicy\KillSwitch;
@@ -31,6 +32,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * )
  */
 class EntityQueryEngine extends EngineBase {
+
+  use DependencySerializationTrait;
 
   /**
    * @var \Drupal\Core\Entity\EntityTypeManagerInterface

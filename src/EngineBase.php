@@ -76,23 +76,27 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
    */
   public function getTotalCount(OverviewFilter $filter) {
     $overview = $filter->getOverview();
-    $keys = $this->entityTypeManager->getDefinition($this->getEntityTypeID($overview))->getKeys();
     $cid = 'entity_overview:' . $overview->id() . '_total';
     $cache = \Drupal::cache()->get($cid);
     if ($cache === FALSE) {
+      $total = 0;
+      $tags = [];
       try {
-        $query = $this->entityTypeManager->getStorage($this->getEntityTypeID($overview))
-          ->getQuery()
-          ->condition($keys['bundle'], $this->getBundles($overview), 'IN')
-          ->condition('status', 1)
-          ->count();
-        $total = $query->execute();
+        foreach ($overview->getEntityBundles() as $entity_type_id => $bundles) {
+          $keys = $this->entityTypeManager->getDefinition($entity_type_id)
+            ->getKeys();
+          $query = $this->entityTypeManager->getStorage($entity_type_id)
+            ->getQuery()
+            ->condition($keys['bundle'], $bundles, 'IN')
+            ->condition('status', 1)
+            ->count();
+          $total += $query->execute();
+          $tags[] = $entity_type_id . '_list';
+        }
       } catch (InvalidPluginDefinitionException $e) {
-        $total = 0;
       } catch (PluginNotFoundException $e) {
-        $total = 0;
       }
-      \Drupal::cache()->set($cid, $total, Cache::PERMANENT, [$this->getEntityTypeID($overview) . '_list']);
+      \Drupal::cache()->set($cid, $total, Cache::PERMANENT, $tags);
     } else {
       $total = $cache->data;
     }

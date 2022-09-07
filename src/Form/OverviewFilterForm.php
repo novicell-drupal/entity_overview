@@ -1,14 +1,15 @@
 <?php
 namespace Drupal\entity_overview\Form;
 
+use Drupal\Component\Utility\Html;
 use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\ReplaceCommand;
+use Drupal\Core\DependencyInjection\DependencySerializationTrait;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
 use Drupal\entity_overview\OverviewFilter;
-use Drupal\entity_overview\OverviewResultInterface;
 use Drupal\html5history\Ajax\HistoryReplaceStateCommand;
 use Drupal\entity_overview\OverviewManager;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -17,14 +18,14 @@ use Symfony\Component\HttpFoundation\RequestStack;
 
 class OverviewFilterForm extends FormBase {
 
+  protected string $overview_content_id = '';
+
   protected OverviewFilter $filter;
 
   /**
    * @var OverviewManager
    */
   protected $overviewManager;
-
-  protected ?OverviewResultInterface $result = NULL;
 
   /**
    * @var Request
@@ -67,6 +68,10 @@ class OverviewFilterForm extends FormBase {
     $overview = $filter->getOverview();
 
     $form['#theme'] = 'overview_form';
+    if (empty($this->overview_content_id)) {
+      $this->overview_content_id = Html::getUniqueId('overview-form-contents');
+    }
+    $form['#overview_content_id'] = $this->overview_content_id;
     $form['#overview'] = $filter->getOverviewId();
     $form['#attributes']['class'][] = 'overview-form';
     if ($this->overviewManager->deepLinksEnabled()) {
@@ -79,7 +84,7 @@ class OverviewFilterForm extends FormBase {
     $ajax = [
       'callback' => '::contentCallback',
       'event' => 'change',
-      'wrapper' => 'overview-form-contents',
+      'wrapper' => $this->overview_content_id,
       'progress' => [
         'type' => 'throbber',
       ],
@@ -128,7 +133,7 @@ class OverviewFilterForm extends FormBase {
         '#ajax' => [
           'callback' => '::contentCallback',
           'event' => 'click',
-          'wrapper' => 'overview-form-contents',
+          'wrapper' => $this->overview_content_id,
           'progress' => [
             'type' => 'throbber',
           ],
@@ -159,7 +164,7 @@ class OverviewFilterForm extends FormBase {
     $content = [
       '#type' => 'container',
       '#attributes' => [
-        'id' => "overview-form-contents",
+        'id' => $this->overview_content_id,
         'class' => ['overview-form-contents']
       ],
     ];
@@ -262,9 +267,10 @@ class OverviewFilterForm extends FormBase {
   }
 
   protected function getOverviewResult(OverviewFilter $filter) {
-    if (empty($this->result)) {
-      $this->result = $filter->getOverview()->getOverviewResult($filter);
+    static $result;
+    if (empty($result)) {
+      $result = $filter->getOverview()->getOverviewResult($filter);
     }
-    return $this->result;
+    return $result;
   }
 }
