@@ -330,14 +330,25 @@ class OverviewManager {
   /**
    * @return array
    */
-  public function getViewModes(Overview $overview = NULL) {
+  public function getViewModes(Overview $overview) {
     /** @var \Drupal\Core\Entity\EntityDisplayRepositoryInterface $repository */
     $repository = \Drupal::service('entity_display.repository');
-    if (empty($overview)) {
-      return $repository->getViewModeOptionsByBundle('node', 'page');
-    } else {
-      return $repository->getViewModeOptionsByBundle('node', 'article');
+    $view_modes = [];
+    foreach ($overview->getEntityBundles() as $entity_type_id => $bundles) {
+      foreach ($bundles as $bundle) {
+        if (empty($view_modes)) {
+          $view_modes = $repository->getViewModeOptionsByBundle($entity_type_id, $bundle);
+        } else {
+          $new_view_modes = $repository->getViewModeOptionsByBundle($entity_type_id, $bundle);
+          foreach ($view_modes as $view_mode => $label) {
+            if (!array_key_exists($view_mode, $new_view_modes)) {
+              unset($view_modes[$view_mode]);
+            }
+          }
+        }
+      }
     }
+    return $view_modes;
   }
 
   /**
