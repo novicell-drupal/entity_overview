@@ -34,13 +34,12 @@ class TransformController extends \Drupal\Core\Controller\ControllerBase {
   }
 
   /**
-   * @param $overview
+   * @param string $overview
    * @param string $view_mode
    *
    * @return \Symfony\Component\HttpFoundation\JsonResponse
    */
   public function overviewResult($overview, $view_mode = 'default'): JsonResponse {
-    $overview = $this->overviewManager->getOverview($overview);
     $filter = new OverviewFilter($overview, $this->request->query->all());
     $filter->setViewMode($view_mode);
     $transform = new OverviewResultTransform($filter);

@@ -32,6 +32,7 @@ class EntityOverviewForm extends FieldTransformBase {
         'type' => 'overview_form',
         'overview' => $overview_id,
         'endpoint' => $endpoint->toString(),
+        'initial' => $filter->toArray(),
         'facets' => []
       ];
       /** @var \Drupal\entity_overview\OverviewManager $overviewManager */

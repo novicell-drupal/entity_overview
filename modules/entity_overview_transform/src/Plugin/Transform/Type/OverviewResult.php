@@ -47,7 +47,9 @@ class OverviewResult extends TransformationTypeBase {
       $transformation['content'][] = new \Drupal\transform_api\Transform\EntityTransform($entity->getEntityTypeId(), $entity->id(), $filter->getViewMode());
     }
     $transformation['totals_text'] = $overview->getTotalsText($result);
-    $transformation['pager'] = new PagerTransform();
+    if ($filter->hasPagination()) {
+      $transformation['pager'] = new PagerTransform();
+    }
     $result->getCacheableMetadata()->applyTo($transformation);
     return $transformation;
   }
