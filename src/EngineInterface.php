@@ -7,11 +7,17 @@ use Drupal\Component\Plugin\PluginInspectionInterface;
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\entity_overview\Entity\Overview;
 
 interface EngineInterface extends PluginInspectionInterface, DerivativeInspectionInterface {
 
-  public function label(): string;
+  /**
+   * Returns an administrative presentable label for the engine.
+   *
+   * @return string|\Drupal\Core\StringTranslation\TranslatableMarkup
+   */
+  public function label(): string|TranslatableMarkup;
 
   /**
    * Does the engine support multiple entity types at once?
@@ -35,9 +41,7 @@ interface EngineInterface extends PluginInspectionInterface, DerivativeInspectio
 
   public function getSortCriterias(): array;
 
-  public function getFieldInfo(Overview $overview, string $field): array;
-
-  public function getFieldFormElement(OverviewFilter $filter, string $field): array;
+  public function getFieldInfo(Overview $overview, string $field): ?OverviewFieldInfoInterface;
 
   public function getOverviewResult(OverviewFilter $filter): OverviewResultInterface;
 }

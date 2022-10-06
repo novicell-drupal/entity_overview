@@ -12,6 +12,9 @@ use Drupal\Core\PageCache\ResponsePolicy\KillSwitch;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\entity_overview\Entity\Overview;
+use Drupal\entity_overview\OverviewFields\OwnerField;
+use Drupal\entity_overview\OverviewFields\SearchTextField;
+use Drupal\entity_overview\OverviewFields\TaxonomyField;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 abstract class EngineBase extends PluginBase implements EngineInterface, ContainerFactoryPluginInterface {
@@ -118,6 +121,7 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
     foreach ($filter->getOverview()->getEntityBundles() as $entity_type_id => $bundles) {
       $tags[] = $entity_type_id . '_list';
     }
+    $cache->addCacheableDependency($filter->getOverview());
     $cache->addCacheTags($tags);
     return $cache;
   }
@@ -154,53 +158,12 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
    *
    * @return array
    */
-  protected function getEngineFieldInfo(Overview $overview, string $field): array {
+  protected function getEngineFieldInfo(Overview $overview, string $field): ?OverviewFieldInfoInterface {
     return match ($field) {
-      'text' => [
-        'label' => $this->t('Search keywords'),
-        'widgets' => ['textfield']
-      ],
-      'owner' => [
-        'label' => $this->t('Author'),
-        'widgets' => ['entity_autocomplete']
-      ],
-      default => []
+      'text' => new SearchTextField(),
+      'owner' => new OwnerField(),
+      default => NULL
     };
-  }
-
-  /**
-   * @param \Drupal\entity_overview\OverviewFilter $filter
-   * @param string $field
-   *
-   * @return array
-   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
-   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
-   */
-  protected function getEngineFieldFormElement(OverviewFilter $filter, string $field): array {
-    switch ($field) {
-      case 'text':
-        $form = [
-          '#type' => 'search',
-          '#title' => $this->t('Search terms'),
-          '#default_value' => $filter->getFieldValue($field) ?? ''
-        ];
-        break;
-      case 'owner':
-        $user = NULL;
-        if (!empty($filter->getFieldValue($field))) {
-          $user = \Drupal::entityTypeManager()->getStorage('user')->load($filter->getFieldValue($field));
-        }
-        $form = [
-          '#type' => 'entity_autocomplete',
-          '#title' => $this->t('Author'),
-          '#target_type' => 'user',
-          '#default_value' => $user
-        ];
-        break;
-      default:
-        $form = [];
-    }
-    return $form;
   }
 
   /**
@@ -254,31 +217,14 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
     }
   }
 
-  public function getFieldInfo(Overview $overview, string $field): array {
+  /**
+   * @inheritDoc
+   */
+  public function getFieldInfo(Overview $overview, string $field): ?OverviewFieldInfoInterface {
     if (in_array($field, $this->getPluginDefinition()['facets'])) {
       return $this->getEngineFieldInfo($overview, $field);
     } else {
-      if (empty($this->supportedFields)) {
-        $this->findSupportedFields($overview->getEntityBundles());
-      }
-      return [
-        'label' => $this->supportedFields[$field],
-        'widgets' => ['checkboxes']
-      ];
-    }
-  }
-
-  public function getFieldFormElement(OverviewFilter $filter, string $field): array {
-    if (in_array($field, $this->getPluginDefinition()['facets'])) {
-      return $this->getEngineFieldFormElement($filter, $field);
-    } else {
-      $overview = $filter->getOverview();
-      $widget = $overview->getFieldWidget($field);
-      $element = [
-        '#type' => $widget,
-      ];
       $definition = $this->getFieldDefinitions($overview)[$field];
-
       switch ($definition->getType()) {
         case 'entity_reference':
           $settings = $definition->getSettings() ?? [];
@@ -286,9 +232,8 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
           // TODO: Support more entity types than taxonomy
           if ($settings['target_type'] == 'taxonomy_term') {
             if (count($settings['handler_settings']['target_bundles']) == 1) {
-              $element['#title'] = $definition->getLabel();
-              $element['#default_value'] = $filter->getFieldValue($field) ?? [];
-              $element['#options'] = [];
+              $label = $definition->getLabel();
+              $options = [];
               $vid = reset($settings['handler_settings']['target_bundles']);
               $query = $storage->getQuery();
               $query->condition('vid', $vid)
@@ -296,22 +241,22 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
               $tids = $query->execute();
               $terms = $storage->loadMultiple($tids);
               foreach ($terms as $term) {
-                $element['#options'][$term->id()] = $term->label();
+                $options[$term->id()] = $term->label();
               }
+              return new TaxonomyField($field, $label, $options);
             } else {
               \Drupal::logger('entity_overview')->error('Field %field is not supported by Entity Overview', ['%field' => $field]);
-              return [];
+              return NULL;
             }
           } else {
             \Drupal::logger('entity_overview')->error('Field %field is not supported by Entity Overview', ['%field' => $field]);
-            return [];
+            return NULL;
           }
           break;
         default:
           \Drupal::logger('entity_overview')->error('Field %field is not supported by Entity Overview', ['%field' => $field]);
-          return [];
+          return NULL;
       }
-      return $element;
     }
   }
 

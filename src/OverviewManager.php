@@ -13,6 +13,9 @@ use Drupal\Core\Extension\ModuleHandler;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\entity_overview\Entity\Overview;
+use Drupal\entity_overview\OverviewFields\CountField;
+use Drupal\entity_overview\OverviewFields\PaginationField;
+use Drupal\entity_overview\OverviewFields\SortField;
 
 class OverviewManager {
 
@@ -108,58 +111,17 @@ class OverviewManager {
   /**
    * Returns info about a base field.
    *
+   * @param \Drupal\entity_overview\Entity\Overview $overview
    * @param string $field
    *
-   * @return array
+   * @return \Drupal\entity_overview\OverviewFieldInfoInterface|null
    */
-  public function getBaseFieldInfo(Overview $overview, string $field): array {
+  public function getBaseFieldInfo(Overview $overview, string $field): ?OverviewFieldInfoInterface {
     return match ($field) {
-      'sort' => [
-          'label' => $this->t('Sort select'),
-          'widgets' => ['select'],
-          'base' => TRUE,
-          'requires facets' => FALSE,
-          'can be exposed' => TRUE
-        ],
-      'count' => [
-          'label' => $this->t('Page size select'),
-          'widgets' => ['select'],
-          'base' => TRUE,
-          'requires facets' => FALSE,
-          'can be exposed' => TRUE
-        ],
-      'pagination' => [
-          'label' => $this->t('Pagination'),
-          'widgets' => ['checkbox'],
-          'base' => TRUE,
-          'requires facets' => TRUE,
-          'can be exposed' => FALSE
-        ],
-      default => []
-    };
-  }
-
-  public function getBaseFieldElement(OverviewFilter $filter, string $field) {
-    return match ($field) {
-      'sort' => [
-        '#type' => 'select',
-        '#title' => $this->t('Sort select'),
-        '#options' => $filter->getOverview()->getEngine()->getSortCriterias(),
-        '#default_value' => $filter->getSort()
-      ],
-      'count' => [
-        '#type' => 'select',
-        '#title' => $this->t('Page size select'),
-        '#options' => $this->getCountOptions($filter->getOverviewId()),
-        '#default_value' => $filter->getCount()
-      ],
-      'pagination' => [
-        '#type' => 'checkbox',
-        '#title' => $this->t('Pagination'),
-        '#description' => $this->t('Display pager at the bottom.'),
-        '#default_value' => $filter->hasPagination()
-      ],
-      default => [],
+      'sort' => new SortField(),
+      'count' => new CountField($this),
+      'pagination' => new PaginationField(),
+      default => NULL
     };
   }
 
@@ -170,46 +132,44 @@ class OverviewManager {
    * @return array
    */
   public function getFieldFormElement(OverviewFilter $filter, string $field): array {
-    if (in_array($field, $this->getBaseFields())) {
-      return $this->getBaseFieldElement($filter, $field);
+    if (in_array($field, $this->getBaseFields()) && $filter->getOverview()->getEngine()->supportsBaseField($field)) {
+      return $this->getBaseFieldInfo($filter->getOverview(), $field)->getFieldFormElement($filter);
     } else {
-      return $filter->getOverview()->getEngine()->getFieldFormElement($filter, $field);
+      return $filter->getOverview()->getEngine()->getFieldInfo($filter->getOverview(), $field)->getFieldFormElement($filter);
     }
   }
 
   /**
    * @param \Drupal\entity_overview\Entity\Overview $overview
    *
-   * @return array
+   * @return \Drupal\entity_overview\OverviewFieldInfoInterface[]
    */
-  public function getAllFieldInfos(Overview $overview) {
-    $info = [];
-    $defaults = [
-      'base' => FALSE,
-      'requires facets' => FALSE,
-      'can be exposed' => TRUE
-    ];
-    foreach ($this->getBaseFields() as $field) {
-      $info[$field] = $this->getBaseFieldInfo($overview, $field) + $defaults;
+  public function getAllFieldInfos(Overview $overview): array {
+    $info = &drupal_static(__FUNCTION__, []);
+    if (empty($info[$overview->id()])) {
+      foreach ($this->getBaseFields() as $field) {
+        if ($overview->getEngine()->supportsBaseField($field)) {
+          $info[$overview->id()][$field] = $this->getBaseFieldInfo($overview, $field);
+        }
+      }
+      foreach ($overview->getFields() as $field => $widget) {
+        $info[$overview->id()][$field] = $overview->getEngine()->getFieldInfo($overview, $field);
+      }
     }
-    foreach ($overview->getFields() as $field => $widget) {
-      $info[$field] = $overview->getEngine()->getFieldInfo($overview, $field) + $defaults;
-    }
-    return $info;
+    return $info[$overview->id()];
   }
 
-  public function buildOverviewFilterForm(OverviewFilter $filter, $allow_facets = TRUE) {
+  public function buildOverviewFilterForm(OverviewFilter $filter, $allow_facets = TRUE): array {
     $overview = $filter->getOverview();
     $form = ['fields' => []];
     $field_info = $this->getAllFieldInfos($overview);
 
     foreach ($field_info as $field => $info) {
-      if (!$info['requires facets']) {
-        if ($info['base']) {
-          $form[$field] = $this->getBaseFieldElement($filter, $field);
+      if (!$info->requiresFacets()) {
+        if ($info->isBase()) {
+          $form[$field] = $info->getFieldFormElement($filter);
         } else {
-          $form['fields'][$field] = $overview->getEngine()
-            ->getFieldFormElement($filter, $field);
+          $form['fields'][$field] = $info->getFieldFormElement($filter);
           if (empty($form['fields'][$field]['#description'])) {
             $form['fields'][$field]['#description'] = $this->t('Default values');
           }
@@ -226,8 +186,8 @@ class OverviewManager {
     if ($allow_facets) {
       $facets_options = [];
       foreach ($field_info as $field => $info) {
-        if ($info['can be exposed']) {
-          $facets_options[$field] = $info['label'];
+        if ($info->canBeExposed()) {
+          $facets_options[$field] = $info->label();
         }
       }
       if (!empty($facets_options)) {
@@ -241,12 +201,11 @@ class OverviewManager {
       }
 
       foreach ($field_info as $field => $info) {
-        if ($info['requires facets']) {
-          if ($info['base']) {
-            $form[$field] = $this->getBaseFieldElement($filter, $field);
+        if ($info->requiresFacets()) {
+          if ($info->isBase()) {
+            $form[$field] = $info->getFieldFormElement($filter);
           } else {
-            $form['fields'][$field] = $overview->getEngine()
-              ->getFieldFormElement($filter, $field);
+            $form['fields'][$field] = $info->getFieldFormElement($filter);
           }
         }
       }
@@ -256,8 +215,8 @@ class OverviewManager {
         '#default_value' => '',
       ];
       foreach ($field_info as $field => $info) {
-        if ($info['requires facets']) {
-          if ($info['base']) {
+        if ($info->requiresFacets()) {
+          if ($info->isBase()) {
             $form[$field] = [
               '#type' => 'hidden',
               '#default_value' => FALSE,
@@ -330,25 +289,14 @@ class OverviewManager {
   /**
    * @return array
    */
-  public function getViewModes(Overview $overview) {
+  public function getViewModes(Overview $overview = NULL) {
     /** @var \Drupal\Core\Entity\EntityDisplayRepositoryInterface $repository */
     $repository = \Drupal::service('entity_display.repository');
-    $view_modes = [];
-    foreach ($overview->getEntityBundles() as $entity_type_id => $bundles) {
-      foreach ($bundles as $bundle) {
-        if (empty($view_modes)) {
-          $view_modes = $repository->getViewModeOptionsByBundle($entity_type_id, $bundle);
-        } else {
-          $new_view_modes = $repository->getViewModeOptionsByBundle($entity_type_id, $bundle);
-          foreach ($view_modes as $view_mode => $label) {
-            if (!array_key_exists($view_mode, $new_view_modes)) {
-              unset($view_modes[$view_mode]);
-            }
-          }
-        }
-      }
+    if (empty($overview)) {
+      return $repository->getViewModeOptionsByBundle('node', 'page');
+    } else {
+      return $repository->getViewModeOptionsByBundle('node', 'article');
     }
-    return $view_modes;
   }
 
   /**

@@ -81,17 +81,14 @@ msgstr "Vælg hvilke facetter du gerne vil give brugere adgang til."
 msgid "How many entities to show at once."
 msgstr "Hvor mange elementer skal vises på en gang."
 
-msgid "Page size select"
-msgstr "Side størrelses valg"
+msgid "Page size"
+msgstr "Side størrelse"
 
 msgid "What criteria to sort entities by."
 msgstr "Hvilket kriterie skal elementer sorteres efter."
 
 msgid "What fields can be used as facets?"
 msgstr "Hvilke felter kan bruges som facetter?"
-
-msgid "Sort select"
-msgstr "Sorterings valg"
 
 msgid "Add overview"
 msgstr "Tilføj overblik"

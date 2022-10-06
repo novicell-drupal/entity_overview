@@ -108,8 +108,18 @@ class Overview extends ConfigEntityBase implements OverviewInterface {
    * {@inheritdoc}
    */
   public function calculateDependencies() {
+    parent::calculateDependencies();
+    foreach ($this->getEntityBundles() as $entity_type_id => $bundles) {
+      $definition = $this->entityTypeManager()
+        ->getDefinition($entity_type_id);
+      $this->addDependency('module', $definition->getProvider());
+      foreach ($bundles as $bundle) {
+        $dependency = $definition->getBundleConfigDependency($bundle);
+        $this->addDependency($dependency['type'], $dependency['name']);
+      }
+    }
     // TODO: add target dependency
-    return parent::calculateDependencies();
+    return $this;
   }
 
   /**
@@ -220,7 +230,7 @@ class Overview extends ConfigEntityBase implements OverviewInterface {
     $fields = $this->getEngine()->getSupportedFields($entity_bundles);
     $options = [];
     foreach ($fields as $field) {
-      $options[$field] = $this->getEngine()->getFieldInfo($this, $field)['label'];
+      $options[$field] = $this->getEngine()->getFieldInfo($this, $field)->label();
     }
     return $options;
   }

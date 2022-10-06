@@ -94,14 +94,14 @@ class OverviewFilterForm extends FormBase {
       if ($filter->hasFacet($field)) {
         $form['facets'][$field] = $this->overviewManager->getFieldFormElement($filter, $field);
         $form['facets'][$field]['#ajax'] = $ajax;
-        if ($info['base']) {
-          $form['facets'][$field]['#default_value'] = $form_state->get($field);
+        if ($info->isBase()) {
+          $form['facets'][$field]['#default_value'] = $info->updateFieldFormElementDefaultValue($form_state->get($field));
         } else {
           if ($form_state->has(['fields', $field])) {
-            $form['facets'][$field]['#default_value'] = $form_state->get([
+            $form['facets'][$field]['#default_value'] = $info->updateFieldFormElementDefaultValue($form_state->get([
               'fields',
               $field
-            ]);
+            ]));
           }
         }
       }

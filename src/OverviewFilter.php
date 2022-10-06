@@ -382,7 +382,7 @@ class OverviewFilter {
     ];
     $field_info = $overviewManager->getAllFieldInfos($overview);
     foreach ($field_info as $field => $info) {
-      if ($info['base']) {
+      if ($info->isBase()) {
         if ($form_state->hasValue($field) || $form_state->has($field) || $filter->hasFacet($field)) {
           $values[$field] = $form_state->getValue($field) ?? $form_state->get($field) ?? NULL;
         }

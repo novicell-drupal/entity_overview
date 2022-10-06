@@ -245,8 +245,9 @@ class OverviewEditForm extends EntityForm {
       foreach ($form_state->getValue('fields', []) as $field) {
         if (!empty($field)) {
           $info = $engine->getFieldInfo($this->entity, $field);
-          if (!empty($info['widgets'])) {
-            $fields[$field] = reset($info['widgets']);
+          $widgets = $info->getWidgets();
+          if (!empty($widgets)) {
+            $fields[$field] = reset($widgets);
           } else {
             $fields[$field] = $field;
           }

@@ -101,12 +101,11 @@ class OverviewListFormatter extends FormatterBase {
    * {@inheritdoc}
    */
   public function settingsForm(array $form, FormStateInterface $form_state) {
-    $overview = $this->overviewManager->getOverview($this->fieldDefinition->getSetting('overview'));
     return [
         'view_mode' => [
           '#type' => 'select',
           '#title' => $this->t('View mode'),
-          '#options' => $this->overviewManager->getViewModes($overview),
+          '#options' => $this->overviewManager->getViewModes(),
           '#default_value' => $this->getSetting('view_mode'),
           '#required' => TRUE,
         ],
