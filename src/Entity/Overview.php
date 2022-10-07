@@ -4,6 +4,7 @@ namespace Drupal\entity_overview\Entity;
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Config\Entity\ConfigEntityBase;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\entity_overview\EngineInterface;
 use Drupal\entity_overview\OverviewFilter;
 use Drupal\entity_overview\OverviewInterface;
@@ -55,6 +56,8 @@ use Drupal\entity_overview\OverviewResultInterface;
  * )
  */
 class Overview extends ConfigEntityBase implements OverviewInterface {
+
+  use StringTranslationTrait;
 
   /**
    * The Content notify rule ID.
@@ -230,7 +233,14 @@ class Overview extends ConfigEntityBase implements OverviewInterface {
     $fields = $this->getEngine()->getSupportedFields($entity_bundles);
     $options = [];
     foreach ($fields as $field) {
-      $options[$field] = $this->getEngine()->getFieldInfo($this, $field)->label();
+      $info = $this->getEngine()->getFieldInfo($this, $field);
+      if (!is_null($info)) {
+        $options[$field] = $this->getEngine()
+          ->getFieldInfo($this, $field)
+          ->label();
+      } else {
+        $options[$field] = $this->t('Missing');
+      }
     }
     return $options;
   }

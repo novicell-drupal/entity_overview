@@ -225,6 +225,10 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
       return $this->getEngineFieldInfo($overview, $field);
     } else {
       $definition = $this->getFieldDefinitions($overview)[$field];
+      if (is_null($definition)) {
+        \Drupal::logger('entity_overview')->error('Field %field was not found.', ['%field' => $field]);
+        return NULL;
+      }
       switch ($definition->getType()) {
         case 'entity_reference':
           $settings = $definition->getSettings() ?? [];
@@ -273,9 +277,9 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
           /** @var \Drupal\Core\Entity\EntityFieldManagerInterface $entityFieldManager */
           $entityFieldManager = \Drupal::service('entity_field.manager');
           $bundle_definitions = $entityFieldManager->getFieldDefinitions($entity_type_id, $bundle_id);
-          foreach ($overview->getFields() as $field_name => $widget) {
-            if (!isset($definitions[$overview->id()][$field_name]) && !empty($bundle_definitions[$field_name])) {
-              $definitions[$overview->id()][$field_name] = $bundle_definitions[$field_name];
+          foreach ($bundle_definitions as $field_name => $definition) {
+            if (!isset($definitions[$overview->id()][$field_name]) && !empty($definition)) {
+              $definitions[$overview->id()][$field_name] = $definition;
             }
           }
         }
