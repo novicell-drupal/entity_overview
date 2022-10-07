@@ -56,3 +56,12 @@ function entity_overview_update_9004() {
     $old_config->delete();
   }
 }
+
+/**
+ * Install overview entity.
+ */
+function entity_overview_update_9005() {
+  \Drupal::entityTypeManager()->clearCachedDefinitions();
+  \Drupal::entityDefinitionUpdateManager()
+    ->installEntityType(\Drupal::entityTypeManager()->getDefinition('entity_overview'));
+}
