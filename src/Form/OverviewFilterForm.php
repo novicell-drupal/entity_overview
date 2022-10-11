@@ -216,7 +216,22 @@ class OverviewFilterForm extends FormBase {
    * @param \Drupal\entity_overview\OverviewFilter $filter
    */
   protected function buildEntitiesInContent(array &$content, array $entities, OverviewFilter $filter) {
-    $content['content'] = $this->overviewManager->buildEntitiesWithViewmode($entities, $filter->getViewMode());
+    if (count($entities) == 0) {
+      $content['content'] = $this->buildNoResultContent($filter);
+    } else {
+      $content['content'] = $this->overviewManager->buildEntitiesWithViewmode($entities, $filter->getViewMode());
+    }
+  }
+
+  /**
+   * In case no results were found to be displayed, this content is build instead.
+   *
+   * @param \Drupal\entity_overview\OverviewFilter $filter
+   *
+   * @return \Drupal\Core\StringTranslation\TranslatableMarkup
+   */
+  protected function buildNoResultContent(OverviewFilter $filter) {
+    return $this->t('No results found');
   }
 
   /**
