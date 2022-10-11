@@ -162,7 +162,8 @@ class OverviewFilterForm extends FormBase {
       $entities = [];
     }
     $content = [
-      '#type' => 'container',
+      '#theme' => 'overview_content',
+      '#overview_filter' => $filter,
       '#attributes' => [
         'id' => $this->overview_content_id,
         'class' => ['overview-form-contents']
@@ -171,7 +172,7 @@ class OverviewFilterForm extends FormBase {
     $this->buildEntitiesInContent($content, $entities, $filter);
 
     if (!empty($filter->getShowTotal())) {
-      $content['total'] = $this->getEntitiesTotal($filter, count($entities));
+      $content['total'] = $this->getEntitiesTotal($filter);
     }
 
     if ($filter->hasPagination()) {
@@ -217,7 +218,7 @@ class OverviewFilterForm extends FormBase {
    */
   protected function buildEntitiesInContent(array &$content, array $entities, OverviewFilter $filter) {
     if (count($entities) == 0) {
-      $content['content'] = $this->buildNoResultContent($filter);
+      $content['no_results'] = $this->buildNoResultsContent($filter);
     } else {
       $content['content'] = $this->overviewManager->buildEntitiesWithViewmode($entities, $filter->getViewMode());
     }
@@ -228,10 +229,10 @@ class OverviewFilterForm extends FormBase {
    *
    * @param \Drupal\entity_overview\OverviewFilter $filter
    *
-   * @return \Drupal\Core\StringTranslation\TranslatableMarkup
+   * @return array
    */
-  protected function buildNoResultContent(OverviewFilter $filter) {
-    return $this->t('No results found');
+  protected function buildNoResultsContent(OverviewFilter $filter) {
+    return ['#markup' => $this->t('No results found')];
   }
 
   /**

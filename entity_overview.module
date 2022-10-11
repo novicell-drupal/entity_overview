@@ -1,5 +1,8 @@
 <?php
 
+use Drupal\Core\Render\Element;
+use Drupal\entity_overview\OverviewFilter;
+
 /**
  * Implements hook_locale_translation_projects_alter().
  */
@@ -14,6 +17,7 @@ function entity_overview_locale_translation_projects_alter(&$projects) {
  */
 function entity_overview_theme($existing, $type, $theme, $path) {
   $themes['overview_form'] = ['render element' => 'form'];
+  $themes['overview_content'] = ['render element' => 'elements'];
 
   return $themes;
 }
@@ -27,4 +31,34 @@ function entity_overview_theme_suggestions_overview_form(array $variables) {
     $suggestions[] = 'overview_form__' . $variables['form']['#overview'];
   }
   return $suggestions;
+}
+
+/**
+ * Implements hook_theme_suggestions_HOOK().
+ */
+function entity_overview_theme_suggestions_overview_content(array $variables) {
+  $suggestions = [];
+  dpm($variables);
+  if (!empty($variables['elements']['#overview_filter'])) {
+    /** @var OverviewFilter $filter */
+    $filter = $variables['elements']['#overview_filter'];
+    $suggestions[] = 'overview_content__' . $filter->getOverviewId();
+  }
+  return $suggestions;
+}
+
+function template_preprocess_overview_content(&$variables) {
+  /** @var OverviewFilter $filter */
+  $filter = $variables['elements']['#overview_filter'];
+  if (!empty($filter)) {
+    $variables['overview_filter'] = $filter;
+    $variables['overview_id'] = $filter->getOverviewId();
+    $variables['has_pagination'] = $filter->hasPagination();
+  }
+
+  // Helpful $content variable for templates.
+  $variables += ['content' => []];
+  foreach (Element::children($variables['elements']) as $key) {
+    $variables['content'][$key] = $variables['elements'][$key];
+  }
 }
