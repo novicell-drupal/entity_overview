@@ -2,7 +2,7 @@ name: Entity Overview Search
 description: Use Entity Overview for search functionality.
 type: module
 core_version_requirement: ^8 || ^9
-version: '2.1'
+version: '2.2'
 configure: entity_overview_search.settings
 
 dependencies:
