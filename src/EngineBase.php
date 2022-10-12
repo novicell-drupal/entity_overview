@@ -107,7 +107,12 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
   }
 
   /**
-   * @inheritDoc
+   * Get the cache metadata for the search result.
+   *
+   * @param \Drupal\entity_overview\OverviewFilter $filter Filter settings.
+   * @param bool $has_facets Whether the overview has facets.
+   *
+   * @return CacheableMetadata Caching metadata.
    */
   public function getCacheableMetadata(OverviewFilter $filter, bool $has_facets): CacheableMetadata {
     $cache = new CacheableMetadata();
@@ -151,22 +156,6 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
   }
 
   /**
-   * Returns info about an engine field.
-   *
-   * @param \Drupal\entity_overview\Entity\Overview $overview
-   * @param string $field
-   *
-   * @return array
-   */
-  protected function getEngineFieldInfo(Overview $overview, string $field): ?OverviewFieldInfoInterface {
-    return match ($field) {
-      'text' => new SearchTextField(),
-      'owner' => new OwnerField(),
-      default => NULL
-    };
-  }
-
-  /**
    * @inheritDoc
    */
   public function getSupportedFields(array $entity_bundles = []): array {
@@ -186,7 +175,14 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
     return $this->supportedSortFields;
   }
 
-  protected function findSupportedFields(array $entity_bundles) {
+  /**
+   * Finds the supported fields and sorting fields of selected entity types and bundles and caches it.
+   *
+   * @param array $entity_bundles
+   *
+   * @return void
+   */
+  protected function findSupportedFields(array $entity_bundles): void {
     $entity_types = $this->overviewManager->getSupportedEntityTypes();
     $this->supportedFields = $this->getEngineSupportedFields($entity_bundles);
     $this->supportedSortFields = [];
@@ -265,10 +261,29 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
   }
 
   /**
-   * @param $overview_id
+   * Returns info about an engine field.
+   *
+   * @param \Drupal\entity_overview\Entity\Overview $overview Overview configuration.
+   * @param string $field Field ID.
+   *
+   * @return \Drupal\entity_overview\OverviewFieldInfoInterface|null Returns field info or NULL if field not found.
+   */
+  protected function getEngineFieldInfo(Overview $overview, string $field): ?OverviewFieldInfoInterface {
+    return match ($field) {
+      'text' => new SearchTextField(),
+      'owner' => new OwnerField(),
+      default => NULL
+    };
+  }
+
+  /**
+   * Gets all relevant field definitions for a given Overview configuration.
+   *
+   * @param \Drupal\entity_overview\Entity\Overview $overview The Overview configuration.
+   *
    * @return array
    */
-  protected function getFieldDefinitions(Overview $overview) {
+  protected function getFieldDefinitions(Overview $overview): array {
     $definitions = &drupal_static(__FUNCTION__, []);
     if (!isset($definitions[$overview->id()])) {
       $definitions[$overview->id()] = [];
