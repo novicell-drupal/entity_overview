@@ -35,11 +35,6 @@ class EntityQueryEngine extends EngineBase {
 
   use DependencySerializationTrait;
 
-  /**
-   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
-   */
-  protected EntityTypeManagerInterface $entityTypeManager;
-
   public function __construct(array $configuration, $plugin_id, $plugin_definition, OverviewManager $overviewManager, KillSwitch $killSwitch, EntityTypeManagerInterface $entityTypeManager) {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $overviewManager, $killSwitch);
     $this->entityTypeManager = $entityTypeManager;
@@ -189,7 +184,7 @@ class EntityQueryEngine extends EngineBase {
         $cache = \Drupal::cache()->get($cid);
         if ($cache === FALSE) {
           $total = $query->execute();
-          \Drupal::cache()->set($cid, $total, Cache::PERMANENT, [$this->getEntityTypeID($overview) . '_list']);
+          \Drupal::cache()->set($cid, $total, Cache::PERMANENT, $this->entityTypeManager->getDefinition($this->getEntityTypeID($overview))->getListCacheTags());
         } else {
           $total = $cache->data;
         }

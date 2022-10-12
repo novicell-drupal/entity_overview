@@ -7,6 +7,7 @@ use Drupal\Component\Plugin\Exception\PluginNotFoundException;
 use Drupal\Component\Plugin\PluginBase;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Cache\CacheableMetadata;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\PageCache\ResponsePolicy\KillSwitch;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
@@ -20,6 +21,11 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 abstract class EngineBase extends PluginBase implements EngineInterface, ContainerFactoryPluginInterface {
 
   use StringTranslationTrait;
+
+  /**
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
+   */
+  protected EntityTypeManagerInterface $entityTypeManager;
 
   /**
    * @var \Drupal\entity_overview\OverviewManager
@@ -86,15 +92,15 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
       $tags = [];
       try {
         foreach ($overview->getEntityBundles() as $entity_type_id => $bundles) {
-          $keys = $this->entityTypeManager->getDefinition($entity_type_id)
-            ->getKeys();
+          $entity_type = $this->entityTypeManager->getDefinition($entity_type_id);
+          $keys = $entity_type->getKeys();
           $query = $this->entityTypeManager->getStorage($entity_type_id)
             ->getQuery()
             ->condition($keys['bundle'], $bundles, 'IN')
             ->condition('status', 1)
             ->count();
           $total += $query->execute();
-          $tags[] = $entity_type_id . '_list';
+          $tags += $entity_type->getListCacheTags();
         }
       } catch (InvalidPluginDefinitionException $e) {
       } catch (PluginNotFoundException $e) {
@@ -124,7 +130,7 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
     }
     $tags = [];
     foreach ($filter->getOverview()->getEntityBundles() as $entity_type_id => $bundles) {
-      $tags[] = $entity_type_id . '_list';
+      $tags += $this->entityTypeManager->getDefinition($entity_type_id)->getListCacheTags();
     }
     $cache->addCacheableDependency($filter->getOverview());
     $cache->addCacheTags($tags);
