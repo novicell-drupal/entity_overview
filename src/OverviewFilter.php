@@ -259,7 +259,7 @@ class OverviewFilter {
       $this->setPage($request->query->get('page'));
     }
     foreach ($this->getFacets() as $field) {
-      if ($request->query->has($field)) {
+      if (!in_array($field, OverviewManager::baseFields) && $request->query->has($field)) {
         $this->setFieldValue($field, $request->query->get($field));
       }
     }
@@ -277,8 +277,8 @@ class OverviewFilter {
     $this->updateFormStateValue($form_state, 'count', $this->getCount());
     $this->updateFormStateValue($form_state, 'page', $this->getPage());
     $this->updateFormStateValue($form_state, 'fields', $this->getFieldValues());
-    foreach ($this->getFieldValues() as $key => $value) {
-      $this->updateFormStateValue($form_state, $key, $value, TRUE);
+    foreach ($this->getFieldValues() as $field => $value) {
+      $this->updateFormStateValue($form_state, $field, $value, !in_array($field, OverviewManager::baseFields));
     }
   }
 

@@ -56,7 +56,7 @@ class OverviewManager {
    */
   private ModuleHandler $moduleHandler;
 
-  protected const baseFields = [
+  const baseFields = [
     'count',
     'sort',
     'pagination'
