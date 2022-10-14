@@ -263,6 +263,7 @@ class OverviewFilterForm extends FormBase {
    */
   public function contentCallback($form, FormStateInterface $form_state) {
     $filter = OverviewFilter::createFromFormState($this->filter, $form_state);
+    $filter->setFacets($this->filter->getFacets());
     $response = new AjaxResponse();
     $response->addCommand(new ReplaceCommand('.overview-form-contents', $form['content']));
     if ($this->overviewManager->deepLinksEnabled()) {
