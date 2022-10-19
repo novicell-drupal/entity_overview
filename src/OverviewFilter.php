@@ -57,7 +57,11 @@ class OverviewFilter {
    * @return \Drupal\entity_overview\Entity\Overview
    */
   public function getOverview(): Overview {
-    return Overview::load($this->overview_id);
+    static $overview = NULL;
+    if (is_null($overview)) {
+      $overview = Overview::load($this->overview_id);
+    }
+    return $overview;
   }
 
   /**

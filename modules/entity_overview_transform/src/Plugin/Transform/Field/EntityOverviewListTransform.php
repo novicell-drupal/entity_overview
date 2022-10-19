@@ -76,7 +76,7 @@ class EntityOverviewListTransform extends FieldTransformBase {
    */
   public static function defaultSettings() {
     return [
-        'transform_mode' => 'teaser',
+        'transform_mode' => 'default',
       ] + parent::defaultSettings();
   }
 
@@ -113,6 +113,9 @@ class EntityOverviewListTransform extends FieldTransformBase {
           $transform_modes = array_intersect_key($transform_modes, $this->entityTransformRepository->getTransformModeOptionsByBundle($entity_type_id, $bundle));
         }
       }
+    }
+    if (empty($transform_modes)) {
+      $transform_modes = ['default' => $this->t('Default')];
     }
     return $transform_modes ?? [];
   }
