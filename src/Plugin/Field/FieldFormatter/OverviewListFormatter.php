@@ -119,9 +119,10 @@ class OverviewListFormatter extends FormatterBase {
    * {@inheritdoc}
    */
   public function settingsSummary() {
+    $overview = $this->overviewManager->getOverview($this->fieldDefinition->getSetting('overview'));
     $summary = [];
     $summary[] = $this->t('View mode: @view_mode', [
-      '@view_mode' => $this->getSetting('view_mode')
+      '@view_mode' => $this->overviewManager->getViewModes($overview)[$this->getSetting('view_mode')]
     ]);
 
     return $summary;

@@ -10,8 +10,8 @@ entity_overview_transform.overview_result:
     _permission: 'access content'
     _format: json
 
-entity_overview_transform.overview_result.view_mode:
-  path: '/transform/overview_result/{overview}/{view_mode}'
+entity_overview_transform.overview_result.transform_mode:
+  path: '/transform/overview_result/{overview}/{transform_mode}'
   defaults:
     _title: 'Transforms overview result into JSON response.'
     _controller: '\Drupal\entity_overview_transform\Controller\TransformController::overviewResult'

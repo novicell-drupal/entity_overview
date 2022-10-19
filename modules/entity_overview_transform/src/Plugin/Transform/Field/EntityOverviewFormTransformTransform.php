@@ -6,19 +6,17 @@ use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Url;
 use Drupal\entity_overview\OverviewFilter;
 use Drupal\entity_overview_transform\Transform\OverviewResultTransform;
-use Drupal\transform_api\FieldTransformBase;
 
 /**
  * @FieldTransform(
  *  id = "entity_overview_form",
- *  title = "Entity overview form",
- *  description = "Filtered entities or exposed form for filtering entities.",
- *  types = {
+ *  label = @Translation("Entity overview form"),
+ *  field_types = {
  *    "overview_filter"
  *  }
  * )
  */
-class EntityOverviewForm extends FieldTransformBase {
+class EntityOverviewFormTransformTransform extends EntityOverviewListTransform {
 
   public function transformElements(FieldItemListInterface $items, $langcode) {
     $overview_id = $items->getSetting('overview');
@@ -26,8 +24,8 @@ class EntityOverviewForm extends FieldTransformBase {
     $values = [];
     foreach ($items as $delta => $item) {
       $filter = new OverviewFilter($overview_id, $item->getValue());
-      $filter->setViewMode($this->getSetting('view_mode'));
-      $endpoint = Url::fromRoute('entity_overview_transform.overview_result.view_mode', ['overview' => $overview_id, 'view_mode' => $filter->getViewMode()]);
+      $filter->setViewMode($this->getSetting('transform_mode'));
+      $endpoint = Url::fromRoute('entity_overview_transform.overview_result.transform_mode', ['overview' => $overview_id, 'transform_mode' => $filter->getViewMode()]);
       $values[$delta] = [
         'type' => 'overview_form',
         'overview' => $overview_id,
