@@ -5,6 +5,7 @@ namespace Drupal\entity_overview_transform\Plugin\Transform\Type;
 use Drupal\entity_overview\OverviewFilter;
 use Drupal\entity_overview\OverviewManager;
 use Drupal\transform_api\Annotation\TransformationType;
+use Drupal\transform_api\Plugin\Transform\Field\EntityTransform;
 use Drupal\transform_api\Transform\PagerTransform;
 use Drupal\transform_api\Transform\TransformInterface;
 use Drupal\transform_api\TransformationTypeBase;
@@ -41,10 +42,22 @@ class OverviewResult extends TransformationTypeBase {
     $transformation = [
       'type' => 'overview_result'
     ];
-    //$transformation += $transform->getValues();
-    $transformation['content'] = [];
-    foreach ($result->getEntities() as $entity) {
-      $transformation['content'][] = new \Drupal\transform_api\Transform\EntityTransform($entity->getEntityTypeId(), $entity->id(), $filter->getViewMode());
+    $entities = $result->getEntities();
+    $ids = [];
+    $types = [];
+    foreach ($entities as $entity) {
+      $ids[] = $entity->id();
+      $types[] = $entity->getEntityTypeId();
+    }
+    if (empty($types)) {
+      $transformation['content'] = [];
+    } elseif (count($types) == 1) {
+      $transformation['content'] = [new \Drupal\transform_api\Transform\EntityTransform($types[0], $ids, $filter->getViewMode())];
+    } else {
+      $transformation['content'] = [];
+      foreach ($result->getEntities() as $entity) {
+        $transformation['content'][] = new \Drupal\transform_api\Transform\EntityTransform($entity->getEntityTypeId(), $entity->id(), $filter->getViewMode());
+      }
     }
     $transformation['totals_text'] = $overview->getTotalsText($result);
     if ($filter->hasPagination()) {
