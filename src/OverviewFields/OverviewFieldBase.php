@@ -37,11 +37,14 @@ abstract class OverviewFieldBase implements OverviewFieldInfoInterface {
   }
 
   public function getFieldFormElement(OverviewFilter $filter): array {
-    return [
+    $element = [
       '#type' => $filter->getOverview()->getFieldWidget($this->id()),
       '#title' => $this->label(),
-      '#default_value' => $filter->getFieldValue($this->id())
     ];
+    if (!empty($filter->getFieldValue($this->id()))) {
+      $element['#default_value'] = $filter->getFieldValue($this->id());
+    }
+    return $element;
   }
 
   public function updateFieldFormElementDefaultValue($value): mixed {

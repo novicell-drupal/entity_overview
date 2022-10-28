@@ -17,11 +17,11 @@ class TaxonomyField extends OverviewFieldBase {
   }
 
   public function getFieldFormElement(OverviewFilter $filter): array {
-    return parent::getFieldFormElement($filter) + ['#options' => $this->options];
+    return parent::getFieldFormElement($filter) + ['#options' => $this->options ?? []];
   }
 
   public function getFieldFormTransform(OverviewFilter $filter): array {
-    return parent::getFieldFormTransform($filter) + ['options' => $this->options];
+    return parent::getFieldFormTransform($filter) + ['options' => $this->options ?? []];
   }
 
 }
