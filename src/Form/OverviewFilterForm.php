@@ -284,10 +284,11 @@ class OverviewFilterForm extends FormBase {
   }
 
   protected function getOverviewResult(OverviewFilter $filter) {
-    static $result;
-    if (empty($result)) {
-      $result = $filter->getOverview()->getOverviewResult($filter);
+    static $result = [];
+    $key = md5(serialize($filter));
+    if (empty($result[$key])) {
+      $result[$key] = $filter->getOverview()->getOverviewResult($filter);
     }
-    return $result;
+    return $result[$key];
   }
 }

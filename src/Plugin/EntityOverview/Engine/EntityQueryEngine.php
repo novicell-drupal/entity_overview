@@ -82,7 +82,7 @@ class EntityQueryEngine extends EngineBase {
     if ($filter->hasPagination()) {
       // Do not use dependency injection for the request, or it will be serialized with the form state
       \Drupal::requestStack()->getCurrentRequest()->query->set('page', $filter->getPage());
-      $query->pager($filter->getCount());
+      $query->pager($filter->getCount(), 0);
     } elseif ($filter->getCount() > 0) {
       $query->range($filter->getPage() * $filter->getCount(), $filter->getCount());
     }
