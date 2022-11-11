@@ -47,16 +47,17 @@ class OverviewResult extends TransformationTypeBase {
     $types = [];
     foreach ($entities as $entity) {
       $ids[] = $entity->id();
-      $types[] = $entity->getEntityTypeId();
+      $types[$entity->getEntityTypeId()] = $entity->getEntityTypeId();
     }
+    $types = array_values($types);
     if (empty($types)) {
       $transformation['content'] = [];
     } elseif (count($types) == 1) {
-      $transformation['content'] = [new \Drupal\transform_api\Transform\EntityTransform($types[0], $ids, $filter->getViewMode())];
+      $transformation['content'] = new \Drupal\transform_api\Transform\EntityTransform($types[0], $ids, $filter->getViewMode());
     } else {
       $transformation['content'] = [];
       foreach ($result->getEntities() as $entity) {
-        $transformation['content'][] = new \Drupal\transform_api\Transform\EntityTransform($entity->getEntityTypeId(), $entity->id(), $filter->getViewMode());
+        $transformation['content'][$entity->getEntityTypeId() . ':' . $entity->id()] = new \Drupal\transform_api\Transform\EntityTransform($entity->getEntityTypeId(), $entity->id(), $filter->getViewMode());
       }
     }
     $transformation['totals_text'] = $overview->getTotalsText($result);
