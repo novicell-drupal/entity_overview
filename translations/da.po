@@ -63,8 +63,15 @@ msgstr "Filtrede ud af total antal elements"
 msgid "Shown items out of filtered number of items"
 msgstr "Vist elementer ud af filtrerede antal elementer"
 
-msgid "Showing @count out of @total"
-msgstr "Viser @count ud af @total"
+msgid "1 result found"
+msgid_plural "@count results found"
+msgstr[0] "1 resultat fundet"
+msgstr[1] "@count resultater fundet"
+
+msgid "Showing 1 out of @total"
+msgid_plural "Showing @count out of @total"
+msgstr[0] "Viser 1 ud af @total"
+msgstr[1] "Viser @count ud af @total"
 
 msgid "Show entities of this type."
 msgstr "Vis elementer af denne type."
