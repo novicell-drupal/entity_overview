@@ -2,9 +2,11 @@
 
 namespace Drupal\entity_overview\OverviewFields;
 
+use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\entity_overview\OverviewFieldInfoInterface;
 use Drupal\entity_overview\OverviewFilter;
+use Drupal\transform_api\Transform\EntityAutocompleteEndpointTransform;
 
 class OwnerField implements OverviewFieldInfoInterface {
 
@@ -20,7 +22,7 @@ class OwnerField implements OverviewFieldInfoInterface {
   }
 
   public function getWidgets(): array {
-    return ['entity_autocomplete'];
+    return ['entity_autocomplete' => t('Autocomplete')];
   }
 
   public function isBase(): bool {
@@ -60,7 +62,7 @@ class OwnerField implements OverviewFieldInfoInterface {
     return [
       'type' => 'entity_autocomplete',
       'title' => $this->label(),
-      'target_type' => 'user',
+      'endpoint' => new EntityAutocompleteEndpointTransform('user'),
       'default_value' => new \Drupal\transform_api\Transform\EntityTransform('user', $filter->getFieldValue($this->id()))
     ];
   }

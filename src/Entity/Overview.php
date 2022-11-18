@@ -20,7 +20,8 @@ use Drupal\entity_overview\OverviewResultInterface;
  *     "list_builder" = "Drupal\entity_overview\OverviewListBuilder",
  *     "form" = {
  *       "default" = "Drupal\entity_overview\Form\OverviewEditForm",
- *       "add" = "Drupal\entity_overview\Form\OverviewEditForm",
+ *       "add" = "Drupal\entity_overview\Form\OverviewAddForm",
+ *       "entities" = "Drupal\entity_overview\Form\OverviewAddForm",
  *       "edit" = "Drupal\entity_overview\Form\OverviewEditForm",
  *       "delete" = "Drupal\Core\Entity\EntityDeleteForm"
  *     },
@@ -51,6 +52,7 @@ use Drupal\entity_overview\OverviewResultInterface;
  *     "add-page" = "/admin/config/content/entity_overview/overview/add",
  *     "collection" = "/admin/config/content/entity_overview/overview",
  *     "edit-form" = "/admin/config/content/entity_overview/overview/{entity_overview}",
+ *     "entities-form" = "/admin/config/content/entity_overview/overview/{entity_overview}/entities",
  *     "delete-form" = "/admin/config/content/entity_overview/overview/{entity_overview}/delete"
  *   }
  * )
@@ -223,11 +225,7 @@ class Overview extends ConfigEntityBase implements OverviewInterface {
   }
 
   /**
-   * Generate an array with field names as key and labels as value.
-   *
-   * @param array $entity_bundles
-   *
-   * @return array
+   * @inheritDoc
    */
   public function getSupportedFieldsWithLabels(array $entity_bundles): array {
     $fields = $this->getEngine()->getSupportedFields($entity_bundles);
@@ -243,6 +241,18 @@ class Overview extends ConfigEntityBase implements OverviewInterface {
       }
     }
     return $options;
+  }
+
+  /**
+   * @inheritDoc
+   */
+  public function getSupportedFieldsInfo(array $entity_bundles): array {
+    $fields = $this->getEngine()->getSupportedFields($entity_bundles);
+    $infos = [];
+    foreach ($fields as $field) {
+      $infos[$field] = $this->getEngine()->getFieldInfo($this, $field);
+    }
+    return $infos;
   }
 
   /**

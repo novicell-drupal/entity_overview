@@ -13,9 +13,9 @@ use Drupal\entity_overview\OverviewManager;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * Edit form for overviews.
+ * Add form for overviews.
  */
-class OverviewEditForm extends EntityForm {
+class OverviewAddForm extends EntityForm {
 
   protected $entityTypeManager;
   protected $entityFieldManager;
@@ -91,76 +91,39 @@ class OverviewEditForm extends EntityForm {
       ],
     ];
 
-    /** @var \Drupal\entity_overview\EngineInterface $engine */
-    $engine = $this->entity->getEngine();
-    $form['engine_item'] = [
-      '#type' => 'item',
-      '#title' => $this->t('Search engine'),
-      '#description' => $engine->label()
-    ];
-
-    $bundles = $this->entity->getEntityBundles();
-    $entity_types = $this->overviewManager->getSupportedEntityTypes();
-    $form['entity_bundles_item'] = [
-      '#type' => 'item',
-      '#title' => $this->t('Entity types'),
-      '#description' => '',
-      '#default_value' => $bundles
-    ];
-    foreach ($entity_types as $entity_type) {
-      $entity_type_id = $entity_type['id'];
-      if (empty($bundles[$entity_type_id])) {
-        continue;
-      }
-      $bundle_labels = [];
-      foreach ($bundles[$entity_type_id] as $bundle) {
-        $bundle_labels[] = $entity_types[$entity_type_id]['label'] . ' (' . $entity_types[$entity_type_id]['bundles'][$bundle]['label'] . ')';
-      }
-      $form['entity_bundles_item']['#description'] = implode(', ', $bundle_labels);
+    $engine_options = [];
+    foreach ($this->engineManager->getDefinitions() as $key => $definition) {
+      $engine_options[$definition['id']] = $this->t($definition['title'] ?? 'Engine');
     }
-
-    $form['fields'] = [
-      '#type' => 'checkboxes',
-      '#title' => $this->t('Fields'),
-      '#options' => $this->entity->getSupportedFieldsWithLabels($bundles),
-      '#description' => $this->t('What fields can be used as facets?'),
-      '#default_value' => array_keys($this->entity->getFields())
+    $form['engine_id'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Search engine'),
+      '#options' => $engine_options
     ];
 
-    $form['fields'] = [
+    $form['entity_bundles'] = [
       '#type' => 'details',
-      '#title' => $this->t('Fields'),
-      '#description' => $this->t('What fields can be used as facets?'),
+      '#title' => $this->t('Entity types'),
       '#open' => TRUE,
+      '#required' => TRUE
     ];
-    $fields = $this->entity->getFields();
-    foreach ($this->entity->getSupportedFieldsInfo($bundles) as $field => $field_info) {
-      $widgets = [
-        '' => ' - ' . $this->t('Disabled') . ' - ',
-      ] + $field_info->getWidgets();
-      $form['fields'][$field] = [
-        '#type' => 'select',
-        '#title' => $field_info->label(),
-        '#options' => $widgets,
-        '#default_value' => $fields[$field] ?? ''
+
+    $entity_bundles = $this->entity->getEntityBundles();
+    $entity_types = $this->overviewManager->getSupportedEntityTypes();
+    foreach ($entity_types as $entity_type) {
+      $options = [];
+      foreach ($entity_type['bundles'] as $bundle_id => $bundle) {
+        $options[$bundle_id] = $bundle['label'];
+      }
+
+      $form['entity_bundles'][$entity_type['id']] = [
+        '#type' => 'checkboxes',
+        '#title' => $entity_type['label'],
+        '#description' => $this->t(''),
+        '#options' => $options,
+        '#default_value' => $entity_bundles[$entity_type['id']] ?? [],
       ];
     }
-
-    $sort_options = $engine->getSupportedSortFields($bundles);
-    $form['sort_field'] = [
-      '#type' => 'select',
-      '#title' => $this->t('Sort by'),
-      '#options' => $sort_options,
-      '#description' => $this->t('What field should be used for sorting?'),
-      '#default_value' => $this->entity->getSortField() ?? 'changed'
-    ];
-
-    $form['show_total'] = [
-      '#type' => 'select',
-      '#title' => t('Display of total number of items'),
-      '#options' => $this->overviewManager->getShowTotalOptions(),
-      '#default_value' => $this->entity->getShowTotal() ?? ''
-    ];
 
     return parent::buildForm($form, $form_state);
   }
@@ -169,6 +132,30 @@ class OverviewEditForm extends EntityForm {
    * {@inheritdoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
+    $bundles = [];
+    $entity_types = $this->overviewManager->getSupportedEntityTypes();
+    foreach ($entity_types as $entity_type) {
+      foreach ($form_state->getValue([
+        'entity_bundles',
+        $entity_type['id']
+      ], []) as $bundle) {
+        if (!empty($bundle)) {
+          if (!isset($bundles[$entity_type['id']])) {
+            $bundles[$entity_type['id']] = [];
+          }
+          $bundles[$entity_type['id']][] = $bundle;
+        }
+      }
+    }
+    if (empty($bundles)) {
+      $form_state->setError($form['entity_bundles'], t('You must select at least one entity bundle.'));
+    }
+    else {
+      $engine = $this->engineManager->createInstance($form_state->getValue('engine_id'));
+      if (!$engine->supportsMultipleEntities() && count($bundles) > 1) {
+        $form_state->setError($form['entity_bundles'], t('The %engine engine only supports a single entity type.', ['%engine' => $engine->label()]));
+      }
+    }
   }
 
   /**
@@ -178,13 +165,23 @@ class OverviewEditForm extends EntityForm {
     /** @var \Drupal\entity_overview\OverviewInterface $entity */
     $entity = parent::buildEntity($form, $form_state);
 
-    $fields = [];
-    foreach ($form_state->getValue('fields', []) as $key => $field) {
-      if (!empty($field)) {
-        $fields[$key] = $field;
+    $bundles = [];
+    $entity_types = $this->overviewManager->getSupportedEntityTypes();
+    foreach ($entity_types as $entity_type) {
+      foreach ($form_state->getValue([
+        'entity_bundles',
+        $entity_type['id']
+      ], []) as $bundle) {
+        if (!empty($bundle)) {
+          if (!isset($bundles[$entity_type['id']])) {
+            $bundles[$entity_type['id']] = [];
+          }
+          $bundles[$entity_type['id']][] = $bundle;
+        }
       }
     }
-    $entity->setFields($fields);
+    $entity->setEntityBundles($bundles);
+    $entity->setSortField('created');
 
     return $entity;
   }
@@ -194,10 +191,7 @@ class OverviewEditForm extends EntityForm {
    */
   public function save(array $form, FormStateInterface $form_state) {
     parent::save($form, $form_state);
-    $form_state->setRedirectUrl($this->entity->toUrl('collection'));
-    $this->messenger()->addMessage($this->t('Overview %label saved.', [
-      '%label' => $this->entity->label(),
-    ]));
+    $form_state->setRedirectUrl($this->entity->toUrl('edit-form'));
   }
 
 }

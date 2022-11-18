@@ -81,4 +81,13 @@ interface OverviewInterface extends ConfigEntityInterface {
    */
   public function getSupportedFieldsWithLabels(array $entity_bundles): array;
 
+  /**
+   * Generate an array with field info on all supported fields.
+   *
+   * @param array $entity_bundles
+   *
+   * @return \Drupal\entity_overview\OverviewFieldInfoInterface[]
+   */
+  public function getSupportedFieldsInfo(array $entity_bundles): array;
+
 }

@@ -13,11 +13,16 @@ class TaxonomyField extends OverviewFieldBase {
   }
 
   public function getWidgets(): array {
-    return ['checkboxes'];
+    return ['checkboxes' => t('Check boxes'), 'radios' => t('Radios'), 'select' => t('Select list')];
   }
 
   public function getFieldFormElement(OverviewFilter $filter): array {
-    return parent::getFieldFormElement($filter) + ['#options' => $this->options ?? []];
+    if ($filter->getOverview()->getFieldWidget($this->id()) == 'checkboxes') {
+      $options = $this->options ?? [];
+    } else {
+      $options = ['' => t('All')] + $this->options ?? [];
+    }
+    return parent::getFieldFormElement($filter) + ['#options' => $options];
   }
 
   public function getFieldFormTransform(OverviewFilter $filter): array {

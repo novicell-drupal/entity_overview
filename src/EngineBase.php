@@ -8,11 +8,13 @@ use Drupal\Component\Plugin\PluginBase;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\PageCache\ResponsePolicy\KillSwitch;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\entity_overview\Entity\Overview;
+use Drupal\entity_overview\OverviewFields\DateField;
 use Drupal\entity_overview\OverviewFields\OwnerField;
 use Drupal\entity_overview\OverviewFields\SearchTextField;
 use Drupal\entity_overview\OverviewFields\TaxonomyField;
@@ -208,6 +210,11 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
             $this->supportedFields[$field_name] = $definition->getLabel();
           }
           if (in_array($definition->getType(), [
+            'datetime'
+          ])) {
+            $this->supportedFields[$field_name] = $definition->getLabel();
+          }
+          if (in_array($definition->getType(), [
             'created',
             'changed',
             'datetime'
@@ -258,7 +265,8 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
             \Drupal::logger('entity_overview')->error('Field %field is not supported by Entity Overview', ['%field' => $field]);
             return NULL;
           }
-          break;
+        case 'datetime':
+          return new DateField($field, $definition->getLabel(), $definition->getSetting('datetime_type'));
         default:
           \Drupal::logger('entity_overview')->error('Field %field is not supported by Entity Overview', ['%field' => $field]);
           return NULL;
@@ -287,7 +295,7 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
    *
    * @param \Drupal\entity_overview\Entity\Overview $overview The Overview configuration.
    *
-   * @return array
+   * @return FieldDefinitionInterface[]
    */
   protected function getFieldDefinitions(Overview $overview): array {
     $definitions = &drupal_static(__FUNCTION__, []);

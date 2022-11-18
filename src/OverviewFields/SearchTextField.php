@@ -20,7 +20,7 @@ class SearchTextField implements OverviewFieldInfoInterface {
   }
 
   public function getWidgets(): array {
-    return ['search'];
+    return ['search' => t('Search field')];
   }
 
   public function isBase(): bool {

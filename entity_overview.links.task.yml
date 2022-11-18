@@ -8,3 +8,15 @@ entity_overview.settings:
   base_route: entity.entity_overview.collection
   title: Settings
   weight: 50
+
+entity.entity_overview.edit:
+  route_name: entity.entity_overview.edit_form
+  base_route: entity.entity_overview.edit_form
+  title: Edit
+  weight: 1
+
+entity.entity_overview.entities:
+  route_name: entity.entity_overview.entities
+  base_route: entity.entity_overview.edit_form
+  title: Entity types
+  weight: 10

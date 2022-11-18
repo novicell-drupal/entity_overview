@@ -20,7 +20,7 @@ class SortField implements OverviewFieldInfoInterface {
   }
 
   public function getWidgets(): array {
-    return ['select'];
+    return ['select' => t('Select list')];
   }
 
   public function isBase(): bool {

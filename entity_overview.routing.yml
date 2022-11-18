@@ -9,8 +9,16 @@ entity.entity_overview.collection:
 entity.entity_overview.add_form:
   path: '/admin/config/content/entity_overview/add'
   defaults:
-    _entity_form: 'entity_overview.default'
+    _entity_form: 'entity_overview.add'
     _title: 'Add overview'
+  requirements:
+    _permission: 'configure entity overview'
+
+entity.entity_overview.entities:
+  path: '/admin/config/content/entity_overview/overview/{entity_overview}/entities'
+  defaults:
+    _entity_form: 'entity_overview.entities'
+    _title: 'Entities'
   requirements:
     _permission: 'configure entity overview'
 

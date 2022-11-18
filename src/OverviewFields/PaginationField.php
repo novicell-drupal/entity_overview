@@ -20,7 +20,7 @@ class PaginationField implements OverviewFieldInfoInterface {
   }
 
   public function getWidgets(): array {
-    return ['checkbox'];
+    return ['checkbox' => t('Single on/off checkbox')];
   }
 
   public function isBase(): bool {

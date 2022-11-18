@@ -16,7 +16,7 @@ class CountField implements OverviewFieldInfoInterface {
   }
 
   public function id(): string {
-    return 'sort';
+    return 'count';
   }
 
   public function label(): string|TranslatableMarkup {
@@ -24,7 +24,7 @@ class CountField implements OverviewFieldInfoInterface {
   }
 
   public function getWidgets(): array {
-    return ['select'];
+    return ['select' => t('Select list'), 'number' => t('Number field')];
   }
 
   public function isBase(): bool {
