@@ -249,8 +249,10 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
               $options = [];
               $vid = reset($settings['handler_settings']['target_bundles']);
               $query = $storage->getQuery();
-              $query->condition('vid', $vid)
-                ->sort($settings['handler_settings']['sort']['field'], $settings['handler_settings']['sort']['direction']);
+              $query->condition('vid', $vid);
+              if (isset($settings['handler_settings']['sort']['field']) && isset($settings['handler_settings']['sort']['direction'])) {
+                $query->sort($settings['handler_settings']['sort']['field'], $settings['handler_settings']['sort']['direction']);
+              }
               $tids = $query->execute();
               $terms = $storage->loadMultiple($tids);
               foreach ($terms as $term) {
