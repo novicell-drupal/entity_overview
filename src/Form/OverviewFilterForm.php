@@ -3,6 +3,7 @@ namespace Drupal\entity_overview\Form;
 
 use Drupal\Component\Utility\Html;
 use Drupal\Core\Ajax\AjaxResponse;
+use Drupal\Core\Ajax\HtmlCommand;
 use Drupal\Core\Ajax\ReplaceCommand;
 use Drupal\Core\DependencyInjection\DependencySerializationTrait;
 use Drupal\Core\Entity\EntityInterface;
@@ -266,6 +267,8 @@ class OverviewFilterForm extends FormBase {
     $filter->setFacets($this->filter->getFacets());
     $response = new AjaxResponse();
     $response->addCommand(new ReplaceCommand('.overview-form-contents', $form['content']));
+    $response->addCommand(new HtmlCommand('.overview-form-contents__keyword', $form_state->getValue('text')));
+    $response->addCommand(new HtmlCommand('.overview-form-contents__total', $form['content']['total']));
     if ($this->overviewManager->deepLinksEnabled()) {
       $url = Url::fromRoute('<current>');
       $data = $filter->getFieldValues();

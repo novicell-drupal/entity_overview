@@ -100,6 +100,9 @@ class OverviewAddForm extends EntityForm {
       '#title' => $this->t('Search engine'),
       '#options' => $engine_options
     ];
+    if (!$this->entity->isNew()) {
+      $form['engine_id']['#default_value'] = $this->entity->getEngineID();
+    }
 
     $form['entity_bundles'] = [
       '#type' => 'details',

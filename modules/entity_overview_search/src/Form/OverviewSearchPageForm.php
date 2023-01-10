@@ -86,7 +86,8 @@ class OverviewSearchPageForm extends OverviewFilterForm {
     /** @var \Drupal\Core\Ajax\AjaxResponse $response */
     $response = parent::contentCallback($form, $form_state);
     if (empty($form_state->getValue('text'))) {
-      $title = $this->t('Search results');
+      $title = $this->t('Search results')
+        ->__toString();
     } else {
       $title = $this->t('Search results for “@keyword”', ['@keyword' => $form_state->getValue('text')])
         ->__toString();
