@@ -31,8 +31,7 @@ interface OverviewInterface extends ConfigEntityInterface {
   public function getEntityBundles(): array;
 
   /**
-   * @param string $type
-   * @param array $recipients
+   * @param string $engine_id
    *
    * @return $this
    */

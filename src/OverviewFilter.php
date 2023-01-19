@@ -102,6 +102,16 @@ class OverviewFilter {
   }
 
   /**
+   * @param string $field
+   *
+   * @return $this
+   */
+  public function removeFieldValue(string $field): OverviewFilter {
+    unset($this->fields[$field]);
+    return $this;
+  }
+
+  /**
    * @param string $facet
    *
    * @return bool

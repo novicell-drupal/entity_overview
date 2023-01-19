@@ -62,14 +62,14 @@ class Overview extends ConfigEntityBase implements OverviewInterface {
   use StringTranslationTrait;
 
   /**
-   * The Content notify rule ID.
+   * The overview ID.
    *
    * @var string
    */
   protected $id;
 
   /**
-   * The Content notify rule label.
+   * The overview label.
    *
    * @var string
    */
