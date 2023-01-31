@@ -184,18 +184,19 @@ class OverviewManager {
     }
 
     if ($allow_facets) {
-      $facets_options = [];
+      $facet_options = [];
       foreach ($field_info as $field => $info) {
         if ($info->canBeExposed()) {
-          $facets_options[$field] = $info->label();
+          $facet_options[$field] = $info->label();
         }
       }
-      if (!empty($facets_options)) {
+      $this->moduleHandler->alter('entity_overview_facet_options', $facet_options, $filter);
+      if (!empty($facet_options)) {
         $form['facets'] = [
           '#type' => 'checkboxes',
           '#title' => $this->t('Facets'),
           '#description' => $this->t('Select the facets that you want to expose to the user.'),
-          '#options' => $facets_options,
+          '#options' => $facet_options,
           '#default_value' => $filter->getFacets(),
         ];
       }
