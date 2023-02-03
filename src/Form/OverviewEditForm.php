@@ -127,6 +127,9 @@ class OverviewEditForm extends EntityForm {
     ];
     $fields = $this->entity->getFields();
     foreach ($this->entity->getSupportedFieldsInfo($bundles) as $field => $field_info) {
+      if (empty($field_info)) {
+        continue;
+      }
       $widgets = [
         '' => ' - ' . $this->t('Disabled') . ' - ',
       ] + $field_info->getWidgets();

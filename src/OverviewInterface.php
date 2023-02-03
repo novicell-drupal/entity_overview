@@ -89,4 +89,16 @@ interface OverviewInterface extends ConfigEntityInterface {
    */
   public function getSupportedFieldsInfo(array $entity_bundles): array;
 
+  /**
+   * @return array
+   */
+  public function getEngineSettings(): array;
+
+  /**
+   * @param array $engine_settings
+   *
+   * @return $this
+   */
+  public function setEngineSettings(array $engine_settings): self;
+
 }

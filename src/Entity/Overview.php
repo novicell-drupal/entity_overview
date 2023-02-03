@@ -42,6 +42,7 @@ use Drupal\entity_overview\OverviewResultInterface;
  *     "entity_bundles",
  *     "fields",
  *     "engine_id",
+ *     "engine_settings",
  *     "sort_field",
  *     "show_total"
  *   },
@@ -93,6 +94,13 @@ class Overview extends ConfigEntityBase implements OverviewInterface {
    * @var string
    */
   protected $engine_id = '';
+
+  /**
+   * Settings for the engine plugin.
+   *
+   * @var array
+   */
+  protected $engine_settings = [];
 
   /**
    * @var EngineInterface
@@ -219,7 +227,7 @@ class Overview extends ConfigEntityBase implements OverviewInterface {
     if (is_null($this->engine) && !empty($this->engine_id)) {
       /** @var \Drupal\entity_overview\EngineManager $engineManager */
       $engineManager = \Drupal::service('plugin.entity_overview.engine');
-      $this->engine = $engineManager->createInstance($this->engine_id);
+      $this->engine = $engineManager->createInstance($this->engine_id, $this->engine_settings ?? []);
     }
     return $this->engine;
   }
@@ -272,4 +280,20 @@ class Overview extends ConfigEntityBase implements OverviewInterface {
       default => '',
     };
   }
+
+  /**
+   * @inheritDoc
+   */
+  public function getEngineSettings(): array {
+    return $this->engine_settings;
+  }
+
+  /**
+   * @inheritDoc
+   */
+  public function setEngineSettings(array $engine_settings): self {
+    $this->engine_settings = $engine_settings;
+    return $this;
+  }
+
 }

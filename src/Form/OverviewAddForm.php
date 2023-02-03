@@ -95,68 +95,111 @@ class OverviewAddForm extends EntityForm {
     foreach ($this->engineManager->getDefinitions() as $key => $definition) {
       $engine_options[$definition['id']] = $this->t($definition['title'] ?? 'Engine');
     }
+    if (!isset($engine_options[$this->entity->getEngineID() ?? ''])) {
+      $engine_options = [$this->entity->getEngineID() ?? '' => ' - ' . $this->t('Select') . ' - '] + $engine_options;
+      $engine = NULL;
+    } else {
+      $engine = $this->engineManager->createInstance($this->entity->getEngineID(), $this->entity->getEngineSettings() ?? []);
+    }
+    $ajax = [
+      'callback' => '::engineCallback',
+      'event' => 'change',
+      'wrapper' => 'overview-engine-settings',
+      'progress' => [
+        'type' => 'throbber',
+      ],
+    ];
     $form['engine_id'] = [
       '#type' => 'select',
       '#title' => $this->t('Search engine'),
-      '#options' => $engine_options
-    ];
-    if (!$this->entity->isNew()) {
-      $form['engine_id']['#default_value'] = $this->entity->getEngineID();
-    }
-
-    $form['entity_bundles'] = [
-      '#type' => 'details',
-      '#title' => $this->t('Entity types'),
-      '#open' => TRUE,
+      '#options' => $engine_options,
+      '#default_value' => $this->entity->getEngineID() ?? '',
+      '#ajax' => $ajax,
       '#required' => TRUE
     ];
 
-    $entity_bundles = $this->entity->getEntityBundles();
-    $entity_types = $this->overviewManager->getSupportedEntityTypes();
-    foreach ($entity_types as $entity_type) {
-      $options = [];
-      foreach ($entity_type['bundles'] as $bundle_id => $bundle) {
-        $options[$bundle_id] = $bundle['label'];
-      }
+    $form['settings'] = [
+      '#type' => 'container',
+      '#attributes' => [
+        'id' => 'overview-engine-settings'
+      ],
+      '#parents' => []
+    ];
 
-      $form['entity_bundles'][$entity_type['id']] = [
-        '#type' => 'checkboxes',
-        '#title' => $entity_type['label'],
-        '#description' => $this->t(''),
-        '#options' => $options,
-        '#default_value' => $entity_bundles[$entity_type['id']] ?? [],
+    if (!empty($engine)) {
+      $form['settings']['engine_settings'] = $engine->settingsForm([], $form_state);
+
+      $form['settings']['entity_bundles'] = [
+        '#type' => 'details',
+        '#title' => $this->t('Entity types'),
+        '#open' => TRUE,
+        '#required' => TRUE
       ];
+
+      $entity_bundles = $this->entity->getEntityBundles();
+      $entity_types = $engine->getSupportedEntityTypes();
+      foreach ($entity_types as $entity_type) {
+        $options = [];
+        foreach ($entity_type['bundles'] as $bundle_id => $bundle) {
+          $options[$bundle_id] = $bundle['label'];
+        }
+
+        $form['settings']['entity_bundles'][$entity_type['id']] = [
+          '#type' => 'checkboxes',
+          '#title' => $entity_type['label'],
+          '#description' => $this->t(''),
+          '#options' => $options,
+          '#default_value' => $entity_bundles[$entity_type['id']] ?? [],
+        ];
+      }
     }
 
     return parent::buildForm($form, $form_state);
   }
 
   /**
+   * AJAX callback for refreshing settings.
+   *
+   * @param $form
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *
+   * @return mixed
+   */
+  public function engineCallback($form, FormStateInterface $form_state) {
+    return $form['settings'];
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
-    $bundles = [];
-    $entity_types = $this->overviewManager->getSupportedEntityTypes();
-    foreach ($entity_types as $entity_type) {
-      foreach ($form_state->getValue([
-        'entity_bundles',
-        $entity_type['id']
-      ], []) as $bundle) {
-        if (!empty($bundle)) {
-          if (!isset($bundles[$entity_type['id']])) {
-            $bundles[$entity_type['id']] = [];
+    if ($form_state->isRebuilding()) {
+      return;
+    }
+    if (isset($form['settings']['entity_bundles'])) {
+      $bundles = [];
+      $entity_types = $this->overviewManager->getSupportedEntityTypes();
+      foreach ($entity_types as $entity_type) {
+        foreach ($form_state->getValue([
+          'entity_bundles',
+          $entity_type['id']
+        ], []) as $bundle) {
+          if (!empty($bundle)) {
+            if (!isset($bundles[$entity_type['id']])) {
+              $bundles[$entity_type['id']] = [];
+            }
+            $bundles[$entity_type['id']][] = $bundle;
           }
-          $bundles[$entity_type['id']][] = $bundle;
         }
       }
-    }
-    if (empty($bundles)) {
-      $form_state->setError($form['entity_bundles'], t('You must select at least one entity bundle.'));
-    }
-    else {
-      $engine = $this->engineManager->createInstance($form_state->getValue('engine_id'));
-      if (!$engine->supportsMultipleEntities() && count($bundles) > 1) {
-        $form_state->setError($form['entity_bundles'], t('The %engine engine only supports a single entity type.', ['%engine' => $engine->label()]));
+      if (empty($bundles)) {
+        $form_state->setError($form['settings']['entity_bundles'], t('You must select at least one entity bundle.'));
+      }
+      else {
+        $engine = $this->engineManager->createInstance($form_state->getValue('engine_id'), $form_state->getValue('engine_settings') ?? []);
+        if (!$engine->supportsMultipleEntities() && count($bundles) > 1) {
+          $form_state->setError($form['settings']['entity_bundles'], t('The %engine engine only supports a single entity type.', ['%engine' => $engine->label()]));
+        }
       }
     }
   }

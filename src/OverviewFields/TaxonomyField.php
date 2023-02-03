@@ -1,6 +1,7 @@
 <?php
 namespace Drupal\entity_overview\OverviewFields;
 
+use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\entity_overview\OverviewFilter;
 
 class TaxonomyField extends OverviewFieldBase {
@@ -29,4 +30,23 @@ class TaxonomyField extends OverviewFieldBase {
     return parent::getFieldFormTransform($filter) + ['options' => $this->options ?? []];
   }
 
+  public static function createFromFieldDefinition(FieldDefinitionInterface $definition): TaxonomyField {
+    $settings = $definition->getSettings() ?? [];
+    $storage = \Drupal::entityTypeManager()
+      ->getStorage($settings['target_type']);
+    $label = $definition->getLabel();
+    $options = [];
+    $vid = reset($settings['handler_settings']['target_bundles']);
+    $query = $storage->getQuery();
+    $query->condition('vid', $vid);
+    if (isset($settings['handler_settings']['sort']['field']) && isset($settings['handler_settings']['sort']['direction'])) {
+      $query->sort($settings['handler_settings']['sort']['field'], $settings['handler_settings']['sort']['direction']);
+    }
+    $tids = $query->execute();
+    $terms = $storage->loadMultiple($tids);
+    foreach ($terms as $term) {
+      $options[$term->id()] = $term->label();
+    }
+    return new self($definition->getName(), $label, $options);
+  }
 }

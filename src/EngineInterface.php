@@ -85,4 +85,78 @@ interface EngineInterface extends PluginInspectionInterface, DerivativeInspectio
    * @return \Drupal\entity_overview\OverviewResultInterface Result object.
    */
   public function getOverviewResult(OverviewFilter $filter): OverviewResultInterface;
+
+  /**
+   * Defines the default settings for this plugin.
+   *
+   * @return array
+   *   A list of default settings, keyed by the setting name.
+   */
+  public static function defaultSettings();
+
+  /**
+   * Returns the array of settings, including defaults for missing settings.
+   *
+   * @return array
+   *   The array of settings.
+   */
+  public function getSettings();
+
+  /**
+   * Returns the value of a setting, or its default value if absent.
+   *
+   * @param string $key
+   *   The setting name.
+   *
+   * @return mixed
+   *   The setting value.
+   */
+  public function getSetting($key);
+
+  /**
+   * Sets the settings for the plugin.
+   *
+   * @param array $settings
+   *   The array of settings, keyed by setting names. Missing settings will be
+   *   assigned their default values.
+   *
+   * @return $this
+   */
+  public function setSettings(array $settings);
+
+  /**
+   * Sets the value of a setting for the plugin.
+   *
+   * @param string $key
+   *   The setting name.
+   * @param mixed $value
+   *   The setting value.
+   *
+   * @return $this
+   */
+  public function setSetting($key, $value);
+
+  /**
+   * Returns a form to configure settings for the provider.
+   *
+   * Invoked from \Drupal\field_ui\Form\EntityDisplayFormBase to allow
+   * administrators to configure the provider. The relewise module takes care
+   * of handling submitted form values.
+   *
+   * @param array $form
+   *   The form where the settings form is being included in.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The current state of the form.
+   *
+   * @return array
+   *   The form elements for the provider settings.
+   */
+  public function settingsForm(array $form, FormStateInterface $form_state);
+
+  /**
+   * Returns list of all entity types that is supported for overviews.
+   *
+   * @return array
+   */
+  public function getSupportedEntityTypes();
 }
