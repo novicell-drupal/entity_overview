@@ -43,7 +43,7 @@ interface EngineInterface extends PluginInspectionInterface, DerivativeInspectio
   public function supportsBaseField(string $field): bool;
 
   /**
-   * Returns an array of field names that the engines supports based on selected entity types and bundles.
+   * Returns an array of field names that the engine supports based on selected entity types and bundles.
    *
    * @param array $entity_bundles Selected entity types and bundles.
    *

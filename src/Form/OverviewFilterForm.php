@@ -4,12 +4,14 @@ namespace Drupal\entity_overview\Form;
 use Drupal\Component\Utility\Html;
 use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\HtmlCommand;
+use Drupal\Core\Ajax\InvokeCommand;
 use Drupal\Core\Ajax\ReplaceCommand;
 use Drupal\Core\DependencyInjection\DependencySerializationTrait;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
+use Drupal\entity_browser\Ajax\ValueUpdatedCommand;
 use Drupal\entity_overview\OverviewFilter;
 use Drupal\html5history\Ajax\HistoryReplaceStateCommand;
 use Drupal\entity_overview\OverviewManager;
@@ -132,7 +134,7 @@ class OverviewFilterForm extends FormBase {
         '#submit' => ['::pageSubmit'],
         '#value' => $page,
         '#ajax' => [
-          'callback' => '::contentCallback',
+          'callback' => '::pageCallback',
           'event' => 'click',
           'wrapper' => $this->overview_content_id,
           'progress' => [
@@ -268,7 +270,7 @@ class OverviewFilterForm extends FormBase {
     $response = new AjaxResponse();
     $response->addCommand(new ReplaceCommand('.overview-form-contents', $form['content']));
     $response->addCommand(new HtmlCommand('.overview-form-contents__keyword', $form_state->getValue('text')));
-    $response->addCommand(new HtmlCommand('.overview-form-contents__total', $form['content']['total']));
+    $response->addCommand(new HtmlCommand('.overview-form-contents__total', $form['content']['total'] ?? ''));
     if ($this->overviewManager->deepLinksEnabled()) {
       $url = Url::fromRoute('<current>');
       $data = $filter->getFieldValues();
@@ -283,6 +285,20 @@ class OverviewFilterForm extends FormBase {
       }
       $response->addCommand(new HistoryReplaceStateCommand(NULL, NULL, $url->toString() . '?' . http_build_query($data)));
     }
+    return $response;
+  }
+
+  /**
+   * AJAX callback for changing content page.
+   *
+   * @param $form
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *
+   * @return mixed
+   */
+  public function pageCallback($form, FormStateInterface $form_state) {
+    $response = $this->contentCallback($form, $form_state);
+    $response->addCommand(new InvokeCommand('.overview-page-value', 'val', [0]));
     return $response;
   }
 
