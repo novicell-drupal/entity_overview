@@ -25,6 +25,20 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
   use StringTranslationTrait;
 
   /**
+   * The plugin settings.
+   *
+   * @var array
+   */
+  protected $settings = [];
+
+  /**
+   * Whether default settings have been merged into the current $settings.
+   *
+   * @var bool
+   */
+  protected $defaultSettingsMerged = FALSE;
+
+  /**
    * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
   protected EntityTypeManagerInterface $entityTypeManager;
@@ -44,6 +58,7 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
 
   public function __construct(array $configuration, $plugin_id, $plugin_definition, OverviewManager $overviewManager, KillSwitch $killSwitch) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
+    $this->settings = $configuration;
     $this->overviewManager = $overviewManager;
     $this->killSwitch = $killSwitch;
   }
@@ -247,20 +262,7 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
           // TODO: Support more entity types than taxonomy
           if ($settings['target_type'] == 'taxonomy_term') {
             if (count($settings['handler_settings']['target_bundles']) == 1) {
-              $label = $definition->getLabel();
-              $options = [];
-              $vid = reset($settings['handler_settings']['target_bundles']);
-              $query = $storage->getQuery();
-              $query->condition('vid', $vid);
-              if (isset($settings['handler_settings']['sort']['field']) && isset($settings['handler_settings']['sort']['direction'])) {
-                $query->sort($settings['handler_settings']['sort']['field'], $settings['handler_settings']['sort']['direction']);
-              }
-              $tids = $query->execute();
-              $terms = $storage->loadMultiple($tids);
-              foreach ($terms as $term) {
-                $options[$term->id()] = $term->label();
-              }
-              return new TaxonomyField($field, $label, $options);
+              return TaxonomyField::createFromFieldDefinition($definition);
             } else {
               \Drupal::logger('entity_overview')->error('Field %field is not supported by Entity Overview', ['%field' => $field]);
               return NULL;
@@ -320,6 +322,100 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
     }
 
     return $definitions[$overview->id()];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function defaultSettings() {
+    return [];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getSettings() {
+    // Merge defaults before returning the array.
+    if (!$this->defaultSettingsMerged) {
+      $this->mergeDefaults();
+    }
+    return $this->settings;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getSetting($key) {
+    // Merge defaults if we have no value for the key.
+    if (!$this->defaultSettingsMerged && !array_key_exists($key, $this->settings)) {
+      $this->mergeDefaults();
+    }
+    return $this->settings[$key] ?? NULL;
+  }
+
+  /**
+   * Merges default settings values into $settings.
+   */
+  protected function mergeDefaults() {
+    $this->settings += static::defaultSettings();
+    $this->defaultSettingsMerged = TRUE;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setSettings(array $settings) {
+    $this->settings = $settings;
+    $this->defaultSettingsMerged = FALSE;
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setSetting($key, $value) {
+    $this->settings[$key] = $value;
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function settingsForm(array $form, FormStateInterface $form_state) {
+    return [];
+  }
+
+  /**
+   * Returns list of all entity types that is supported for overviews.
+   *
+   * @return array
+   */
+  public function getSupportedEntityTypes() {
+    /** @var \Drupal\Core\Entity\EntityTypeBundleInfoInterface $entityTypeBundleInfo */
+    $entityTypeBundleInfo = \Drupal::service('entity_type.bundle.info');
+    $types = [];
+    $entity_types = $this->entityTypeManager->getDefinitions();
+    foreach ($entity_types as $entity_type) {
+      if (!$entity_type->hasViewBuilderClass() || !$entity_type->isCommonReferenceTarget() || !$entity_type->hasRouteProviders() || $entity_type->getBundleEntityType() == NULL) {
+        continue;
+      }
+
+      $bundles = [];
+      foreach ($entityTypeBundleInfo->getBundleInfo($entity_type->id()) as $bundle_id => $bundle) {
+        $bundles[$bundle_id] = [
+          'id' => $bundle_id,
+          'label' => $bundle['label']
+        ];
+      }
+
+      $types[$entity_type->id()] = [
+        'id' => $entity_type->id(),
+        'label' => $entity_type->getLabel(),
+        'bundles' => $bundles,
+      ];
+    }
+
+    return $types;
   }
 
 }
