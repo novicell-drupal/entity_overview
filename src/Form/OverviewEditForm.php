@@ -127,12 +127,17 @@ class OverviewEditForm extends EntityForm {
     ];
     $fields = $this->entity->getFields();
     foreach ($this->entity->getSupportedFieldsInfo($bundles) as $field => $field_info) {
-      if (empty($field_info)) {
+      if (is_null($field_info)) {
+        $form['fields'][$field] = [
+          '#type' => 'item',
+          '#title' => $field,
+          '#description' => $this->t('No longer supported')
+        ];
         continue;
       }
       $widgets = [
         '' => ' - ' . $this->t('Disabled') . ' - ',
-      ] + $field_info->getWidgets();
+      ] + $field_info->getWidgets() ?? [];
       $form['fields'][$field] = [
         '#type' => 'select',
         '#title' => $field_info->label(),
