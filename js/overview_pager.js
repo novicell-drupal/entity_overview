@@ -16,5 +16,6 @@ Drupal.behaviors.overview_pager = {
       page.val(searchParams.get('page'));
       submit.trigger('click');
     });
+    jQuery('.overview-page-value').val('0');
   }
 };
