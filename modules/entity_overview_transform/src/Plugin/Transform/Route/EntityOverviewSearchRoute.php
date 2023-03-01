@@ -34,7 +34,6 @@ class EntityOverviewSearchRoute extends RouteTransformBase {
       ['overview' => $overview_id, 'transform_mode' => $filter->getViewMode()],
       ['query' => ['facets' => $filter->getFacets()]]
     );
-    dpm(http_build_query($filter->getFacets()));
     $transformation = [
       'type' => 'overview_form',
       'overview' => $overview_id,
