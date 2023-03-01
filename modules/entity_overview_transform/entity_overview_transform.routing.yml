@@ -5,9 +5,9 @@ entity_overview_transform.overview_result:
     _controller: '\Drupal\entity_overview_transform\Controller\TransformController::overviewResult'
   methods: [GET]
   options:
-    _auth: ['basic_auth', 'cookie', 'oauth2']
+    _auth: ['jwt_auth', 'basic_auth', 'cookie', 'oauth2']
   requirements:
-    _permission: 'access content'
+    _access: 'TRUE'
     _format: json
 
 entity_overview_transform.overview_result.transform_mode:
@@ -17,7 +17,7 @@ entity_overview_transform.overview_result.transform_mode:
     _controller: '\Drupal\entity_overview_transform\Controller\TransformController::overviewResult'
   methods: [GET]
   options:
-    _auth: ['basic_auth', 'cookie', 'oauth2']
+    _auth: ['jwt_auth', 'basic_auth', 'cookie', 'oauth2']
   requirements:
-    _permission: 'access content'
+    _access: 'TRUE'
     _format: json
