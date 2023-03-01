@@ -25,6 +25,7 @@ class EntityOverviewFormTransformTransform extends EntityOverviewListTransform {
     foreach ($items as $delta => $item) {
       $filter = new OverviewFilter($overview_id, $item->getValue());
       $filter->setViewMode($this->getSetting('transform_mode'));
+      $filter->fetchRequestValues(\Drupal::request());
       $endpoint = Url::fromRoute('entity_overview_transform.overview_result.transform_mode', ['overview' => $overview_id, 'transform_mode' => $filter->getViewMode()]);
       $values[$delta] = [
         'type' => 'overview_form',

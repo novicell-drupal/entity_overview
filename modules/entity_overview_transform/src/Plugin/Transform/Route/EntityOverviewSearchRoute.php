@@ -27,8 +27,14 @@ class EntityOverviewSearchRoute extends RouteTransformBase {
     $overview = $filter->getOverview();
     $filter->setPagination(TRUE);
     $filter->setShowTotal($overview->getShowTotal());
+    $filter->fetchRequestValues(\Drupal::request());
 
-    $endpoint = Url::fromRoute('entity_overview_transform.overview_result.transform_mode', ['overview' => $overview_id, 'transform_mode' => $filter->getViewMode()]);
+    $endpoint = Url::fromRoute(
+      'entity_overview_transform.overview_result.transform_mode',
+      ['overview' => $overview_id, 'transform_mode' => $filter->getViewMode()],
+      ['query' => ['facets' => $filter->getFacets()]]
+    );
+    dpm(http_build_query($filter->getFacets()));
     $transformation = [
       'type' => 'overview_form',
       'overview' => $overview_id,

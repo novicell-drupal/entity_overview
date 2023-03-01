@@ -41,6 +41,7 @@ class TransformController extends \Drupal\Core\Controller\ControllerBase {
    */
   public function overviewResult($overview, $transform_mode = 'default'): JsonResponse {
     $filter = new OverviewFilter($overview, $this->request->query->all());
+    $filter->fetchRequestValues($this->request);
     $filter->setViewMode($transform_mode);
     $transform = new OverviewResultTransform($filter);
     return new JsonResponse($this->transformer->transformRoot($transform));
