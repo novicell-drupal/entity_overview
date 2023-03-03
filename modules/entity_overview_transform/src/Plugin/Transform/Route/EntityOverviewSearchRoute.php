@@ -32,7 +32,7 @@ class EntityOverviewSearchRoute extends RouteTransformBase {
     $endpoint = Url::fromRoute(
       'entity_overview_transform.overview_result.transform_mode',
       ['overview' => $overview_id, 'transform_mode' => $filter->getViewMode()],
-      ['query' => ['facets' => $filter->getFacets()]]
+      ['query' => ['facets' => $filter->getFacets(), 'pagination' => TRUE]]
     );
     $transformation = [
       'type' => 'overview_form',
