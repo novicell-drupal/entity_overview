@@ -29,11 +29,19 @@ class EntityOverviewSearchRoute extends RouteTransformBase {
     $filter->setShowTotal($overview->getShowTotal());
     $filter->fetchRequestValues(\Drupal::request());
 
+    $query = ['facets' => $filter->getFacets(), 'pagination' => TRUE];
+    if (!$filter->hasFacet('count')) {
+      $query['count'] = $filter->getCount();
+    }
+    if (!$filter->hasFacet('sort')) {
+      $query['sort'] = $filter->getSort();
+    }
     $endpoint = Url::fromRoute(
       'entity_overview_transform.overview_result.transform_mode',
       ['overview' => $overview_id, 'transform_mode' => $filter->getViewMode()],
-      ['query' => ['facets' => $filter->getFacets(), 'pagination' => TRUE]]
+      ['query' => $query]
     );
+
     $transformation = [
       'type' => 'overview_form',
       'overview' => $overview_id,

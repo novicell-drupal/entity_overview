@@ -26,7 +26,20 @@ class EntityOverviewFormTransformTransform extends EntityOverviewListTransform {
       $filter = new OverviewFilter($overview_id, $item->getValue());
       $filter->setViewMode($this->getSetting('transform_mode'));
       $filter->fetchRequestValues(\Drupal::request());
-      $endpoint = Url::fromRoute('entity_overview_transform.overview_result.transform_mode', ['overview' => $overview_id, 'transform_mode' => $filter->getViewMode()]);
+
+      $query = ['facets' => $filter->getFacets(), 'pagination' => TRUE];
+      if (!$filter->hasFacet('count')) {
+        $query['count'] = $filter->getCount();
+      }
+      if (!$filter->hasFacet('sort')) {
+        $query['sort'] = $filter->getSort();
+      }
+      $endpoint = Url::fromRoute(
+        'entity_overview_transform.overview_result.transform_mode',
+        ['overview' => $overview_id, 'transform_mode' => $filter->getViewMode()],
+        ['query' => $query]
+      );
+
       $values[$delta] = [
         'type' => 'overview_form',
         'overview' => $overview_id,
