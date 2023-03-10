@@ -18,6 +18,8 @@ class OverviewFilter {
   protected string $show_total = '';
   protected string $view_mode = 'teaser';
 
+  protected ?Overview $overview = NULL;
+
   public function __construct($overview_id, array $values) {
     $this->overview_id = $overview_id;
     if (isset($values['fields'])) {
@@ -57,11 +59,10 @@ class OverviewFilter {
    * @return \Drupal\entity_overview\Entity\Overview
    */
   public function getOverview(): Overview {
-    static $overview = NULL;
-    if (is_null($overview)) {
-      $overview = Overview::load($this->overview_id);
+    if (is_null($this->overview)) {
+      $this->overview = Overview::load($this->overview_id);
     }
-    return $overview;
+    return $this->overview;
   }
 
   /**
