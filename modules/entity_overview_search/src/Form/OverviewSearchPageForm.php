@@ -51,7 +51,7 @@ class OverviewSearchPageForm extends OverviewFilterForm {
       ]);
     }
     $form['facets']['text']['#type'] = 'search';
-    $form['facets']['text']['#attributes']['class'][] = 'overview-form-search-title';
+    $form['facets']['text']['#wrapper_attributes']['class'][] = 'overview-form-search-title';
     $form['facets']['text']['#title'] = $title;
 
     return $form;
