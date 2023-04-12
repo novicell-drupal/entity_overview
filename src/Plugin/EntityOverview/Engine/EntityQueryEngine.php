@@ -98,7 +98,7 @@ class EntityQueryEngine extends EngineBase {
         break;
     }
 
-    return $query->execute();
+    return $query->accessCheck(TRUE)->execute();
   }
 
   public function getEntities(OverviewFilter $filter): array {
@@ -144,7 +144,7 @@ class EntityQueryEngine extends EngineBase {
         $query->condition($field_name, $value);
       }
     }
-    return $query->execute();
+    return $query->accessCheck(TRUE)->execute();
   }
 
   /**
@@ -173,7 +173,7 @@ class EntityQueryEngine extends EngineBase {
             $query->condition($field_name, $value);
           }
         }
-        $total = $query->execute();
+        $total = $query->accessCheck(TRUE)->execute();
         return $this->t('@count result found', ['@count' => $total]);
       case 'filtered':
         $query = $this->entityTypeManager->getStorage($this->getEntityTypeID($overview))->getQuery()
@@ -183,7 +183,7 @@ class EntityQueryEngine extends EngineBase {
         $cid = 'entity_overview:' . $overview->id() . '_total';
         $cache = \Drupal::cache()->get($cid);
         if ($cache === FALSE) {
-          $total = $query->execute();
+          $total = $query->accessCheck(TRUE)->execute();
           \Drupal::cache()->set($cid, $total, Cache::PERMANENT, $this->entityTypeManager->getDefinition($this->getEntityTypeID($overview))->getListCacheTags());
         } else {
           $total = $cache->data;
@@ -200,7 +200,7 @@ class EntityQueryEngine extends EngineBase {
             $query->condition($field_name, $value);
           }
         }
-        $count = $query->execute();
+        $count = $query->accessCheck(TRUE)->execute();
         break;
       case 'shown':
         $count = $shown;
@@ -220,7 +220,7 @@ class EntityQueryEngine extends EngineBase {
             $query->condition($field_name, $value);
           }
         }
-        $total = $query->execute();
+        $total = $query->accessCheck(TRUE)->execute();
         break;
     }
     return $this->t('Showing @count out of @total', ['@count' => $count, '@total' => $total]);

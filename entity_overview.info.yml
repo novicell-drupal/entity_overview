@@ -1,15 +1,14 @@
 name: Entity Overview
 description: Overview functionality for entities.
 type: module
-core_version_requirement: ^8 || ^9
-version: '2.4'
+core_version_requirement: ^9 || ^10
+version: '2.5'
 configure: entity_overview.list
 
 dependencies:
   - core:node
   - core:datetime
   - core:taxonomy
-  - html5history:html5history
 
 interface translation project: entity_overview
 interface translation server pattern: modules/contrib/entity_overview/translations/%language.po

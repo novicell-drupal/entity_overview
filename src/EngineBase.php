@@ -116,7 +116,9 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
             ->condition($keys['bundle'], $bundles, 'IN')
             ->condition('status', 1)
             ->count();
-          $total += $query->execute();
+          $total += $query
+            ->accessCheck(TRUE)
+            ->execute();
           $tags += $entity_type->getListCacheTags();
         }
       } catch (InvalidPluginDefinitionException $e) {

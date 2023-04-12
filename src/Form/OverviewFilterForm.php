@@ -6,14 +6,12 @@ use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\HtmlCommand;
 use Drupal\Core\Ajax\InvokeCommand;
 use Drupal\Core\Ajax\ReplaceCommand;
-use Drupal\Core\DependencyInjection\DependencySerializationTrait;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
-use Drupal\entity_browser\Ajax\ValueUpdatedCommand;
 use Drupal\entity_overview\OverviewFilter;
-use Drupal\html5history\Ajax\HistoryReplaceStateCommand;
+use Drupal\entity_overview\Ajax\HistoryReplaceStateCommand;
 use Drupal\entity_overview\OverviewManager;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -78,7 +76,7 @@ class OverviewFilterForm extends FormBase {
     $form['#overview'] = $filter->getOverviewId();
     $form['#attributes']['class'][] = 'overview-form';
     if ($this->overviewManager->deepLinksEnabled()) {
-      $form['#attached']['library'] = array_merge($form['#attached']['library'] ?? [], ['html5history/html5history.ajax']);
+      $form['#attached']['library'] = array_merge($form['#attached']['library'] ?? [], ['entity_overview/html5history.ajax']);
       $filter->fetchRequestValues($this->request);
     }
 

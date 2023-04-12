@@ -42,7 +42,7 @@ class TaxonomyField extends OverviewFieldBase {
     if (isset($settings['handler_settings']['sort']['field']) && isset($settings['handler_settings']['sort']['direction'])) {
       $query->sort($settings['handler_settings']['sort']['field'], $settings['handler_settings']['sort']['direction']);
     }
-    $tids = $query->execute();
+    $tids = $query->accessCheck(TRUE)->execute();
     $terms = $storage->loadMultiple($tids);
     foreach ($terms as $term) {
       $options[$term->id()] = $term->label();

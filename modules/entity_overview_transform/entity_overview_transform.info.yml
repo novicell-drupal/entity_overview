@@ -1,8 +1,8 @@
 name: Entity Overview Transform
 description: Use Entity Overview for transformations.
 type: module
-core_version_requirement: ^8 || ^9
-version: '2.4'
+core_version_requirement: ^9 || ^10
+version: '2.5'
 
 dependencies:
   - transform_api:transform_api
