@@ -15,7 +15,7 @@ html5history.ajax:
     js/html5history.ajax.js: {}
   dependencies:
     - core/drupal.ajax
-    - html5history/html5history.proxy
+    - entity_overview/html5history.proxy
 
 pager:
   version: VERSION
