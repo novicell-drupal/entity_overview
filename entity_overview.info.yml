@@ -2,7 +2,7 @@ name: Entity Overview
 description: Overview functionality for entities.
 type: module
 core_version_requirement: ^9 || ^10
-version: '2.5'
+version: '3.0'
 configure: entity_overview.list
 
 dependencies:
