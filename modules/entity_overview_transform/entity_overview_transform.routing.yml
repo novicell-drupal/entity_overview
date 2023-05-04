@@ -1,3 +1,15 @@
+entity_overview_transform.raw_overview_result:
+  path: '/transform/raw_overview_result/{overview}'
+  defaults:
+    _title: 'Transforms overview result into JSON response.'
+    _controller: '\Drupal\entity_overview_transform\Controller\TransformController::rawOverviewResult'
+  methods: [GET]
+  options:
+    _auth: ['jwt_auth', 'basic_auth', 'cookie', 'oauth2']
+  requirements:
+    _access: 'TRUE'
+    _format: json
+
 entity_overview_transform.overview_result:
   path: '/transform/overview_result/{overview}'
   defaults:

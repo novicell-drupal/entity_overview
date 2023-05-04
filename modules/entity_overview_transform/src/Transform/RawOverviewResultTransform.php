@@ -6,7 +6,7 @@ use Drupal\Core\Url;
 use Drupal\entity_overview\OverviewFilter;
 use Drupal\transform_api\Transform\PluginTransformBase;
 
-class OverviewResultTransform extends PluginTransformBase {
+class RawOverviewResultTransform extends PluginTransformBase {
 
   public function __construct(OverviewFilter $filter) {
     $this->values = $filter->toArray();
@@ -14,7 +14,7 @@ class OverviewResultTransform extends PluginTransformBase {
   }
 
   public function getTransformType() {
-    return 'overview_result';
+    return 'raw_overview_result';
   }
 
   public static function buildUrl(OverviewFilter $filter): Url {
@@ -26,8 +26,8 @@ class OverviewResultTransform extends PluginTransformBase {
       $query['sort'] = $filter->getSort();
     }
     return Url::fromRoute(
-      'entity_overview_transform.overview_result.transform_mode',
-      ['overview' => $filter->getOverviewId(), 'transform_mode' => $filter->getViewMode()],
+      'entity_overview_transform.raw_overview_result',
+      ['overview' => $filter->getOverviewId()],
       ['query' => $query]
     );
   }

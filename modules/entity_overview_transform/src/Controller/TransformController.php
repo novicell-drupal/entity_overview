@@ -5,6 +5,7 @@ namespace Drupal\entity_overview_transform\Controller;
 use Drupal\entity_overview\OverviewFilter;
 use Drupal\entity_overview\OverviewManager;
 use Drupal\entity_overview_transform\Transform\OverviewResultTransform;
+use Drupal\entity_overview_transform\Transform\RawOverviewResultTransform;
 use Drupal\transform_api\Transformer;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -35,7 +36,7 @@ class TransformController extends \Drupal\Core\Controller\ControllerBase {
 
   /**
    * @param string $overview
-   * @param string $view_mode
+   * @param string $transform_mode
    *
    * @return \Symfony\Component\HttpFoundation\JsonResponse
    */
@@ -44,6 +45,18 @@ class TransformController extends \Drupal\Core\Controller\ControllerBase {
     $filter->fetchRequestValues($this->request);
     $filter->setViewMode($transform_mode);
     $transform = new OverviewResultTransform($filter);
+    return new JsonResponse($this->transformer->transformRoot($transform));
+  }
+
+  /**
+   * @param string $overview
+   *
+   * @return \Symfony\Component\HttpFoundation\JsonResponse
+   */
+  public function rawOverviewResult($overview): JsonResponse {
+    $filter = new OverviewFilter($overview, $this->request->query->all());
+    $filter->fetchRequestValues($this->request);
+    $transform = new RawOverviewResultTransform($filter);
     return new JsonResponse($this->transformer->transformRoot($transform));
   }
 

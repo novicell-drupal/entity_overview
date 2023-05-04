@@ -13,11 +13,11 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * @TransformationType(
- *  id = "overview_result",
- *  title = "Entity overview result transform"
+ *  id = "raw_overview_result",
+ *  title = "Raw Entity overview result transform"
  * )
  */
-class OverviewResult extends TransformationTypeBase {
+class RawOverviewResult extends TransformationTypeBase {
 
   protected OverviewManager $overviewManager;
 
@@ -42,24 +42,7 @@ class OverviewResult extends TransformationTypeBase {
     $transformation = [
       'type' => 'overview_result'
     ];
-    $entities = $result->getEntities();
-    $ids = [];
-    $types = [];
-    foreach ($entities as $entity) {
-      $ids[] = $entity->id();
-      $types[$entity->getEntityTypeId()] = $entity->getEntityTypeId();
-    }
-    $types = array_values($types);
-    if (empty($types)) {
-      $transformation['content'] = [];
-    } elseif (count($types) == 1) {
-      $transformation['content'] = new \Drupal\transform_api\Transform\EntityTransform($types[0], $ids, $filter->getViewMode());
-    } else {
-      $transformation['content'] = [];
-      foreach ($result->getEntities() as $entity) {
-        $transformation['content'][] = new \Drupal\transform_api\Transform\EntityTransform($entity->getEntityTypeId(), $entity->id(), $filter->getViewMode());
-      }
-    }
+    $transformation['content'] = $result->getResult();
     $transformation['totals_text'] = $overview->getTotalsText($result);
     if ($filter->hasPagination()) {
       $transformation['pager'] = new PagerTransform();

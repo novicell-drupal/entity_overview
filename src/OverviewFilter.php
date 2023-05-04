@@ -254,6 +254,28 @@ class OverviewFilter {
     ];
   }
 
+  public function buildQuery($include_page = TRUE) {
+    $data = $filter->getFieldValues();
+    $array = $filter->toArray();
+    foreach ($this->overviewManager->getBaseFields() as $facet) {
+      if ($filter->hasFacet($facet)) {
+        $data[$facet] = $array[$facet];
+      }
+    }
+    if ($filter->hasPagination()) {
+      $data['page'] = $filter->getPage();
+    }
+
+    $query = ['facets' => $this->getFacets(), 'pagination' => FALSE];
+    if (!$this->hasFacet('count')) {
+      $query['count'] = $this->getCount();
+    }
+    if (!$this->hasFacet('sort')) {
+      $query['sort'] = $this->getSort();
+    }
+    return $query;
+  }
+
   /**
    * @param \Symfony\Component\HttpFoundation\Request|NULL $request
    *
