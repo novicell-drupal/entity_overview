@@ -297,7 +297,7 @@ class OverviewFilter {
     }
     foreach ($this->getFacets() as $field) {
       if (!in_array($field, OverviewManager::baseFields) && $request->query->has($field)) {
-        $this->setFieldValue($field, $request->query->get($field));
+        $this->setFieldValue($field, $request->get($field));
       }
     }
   }
