@@ -126,17 +126,23 @@ class OverviewManager {
   }
 
   /**
-   * @param \Drupal\entity_overview\OverviewFilter $filter
-   * @param string $field
+   * @param \Drupal\entity_overview\OverviewFilter $filter The filter from which the field is based.
+   * @param string $field The field requested.
+   * @param array $attributes Associative array keyed by attribute and the values to set them to.
    *
    * @return array
    */
-  public function getFieldFormElement(OverviewFilter $filter, string $field): array {
+  public function getFieldFormElement(OverviewFilter $filter, string $field, array $attributes = []): array {
     if (in_array($field, $this->getBaseFields()) && $filter->getOverview()->getEngine()->supportsBaseField($field)) {
-      return $this->getBaseFieldInfo($filter->getOverview(), $field)->getFieldFormElement($filter);
+      $info = $this->getBaseFieldInfo($filter->getOverview(), $field);
     } else {
-      return $filter->getOverview()->getEngine()->getFieldInfo($filter->getOverview(), $field)->getFieldFormElement($filter);
+      $info = $filter->getOverview()->getEngine()->getFieldInfo($filter->getOverview(), $field);
     }
+    $element = $info->getFieldFormElement($filter);
+    foreach ($attributes as $attribute => $value) {
+      $info->setFieldFormElementAttribute($element, $attribute, $value);
+    }
+    return $element;
   }
 
   /**
@@ -170,9 +176,7 @@ class OverviewManager {
           $form[$field] = $info->getFieldFormElement($filter);
         } else {
           $form['fields'][$field] = $info->getFieldFormElement($filter);
-          if (empty($form['fields'][$field]['#description'])) {
-            $form['fields'][$field]['#description'] = $this->t('Default values');
-          }
+          $info->setFieldFormElementAttribute($form['fields'][$field], 'description', $this->t('Default values'));
         }
       }
     }

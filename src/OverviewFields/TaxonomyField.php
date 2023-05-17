@@ -13,10 +13,16 @@ class TaxonomyField extends OverviewFieldBase {
     $this->options = $options;
   }
 
+  /**
+   * @inheritDoc
+   */
   public function getWidgets(): array {
     return ['checkboxes' => t('Check boxes'), 'radios' => t('Radios'), 'select' => t('Select list')];
   }
 
+  /**
+   * @inheritDoc
+   */
   public function getFieldFormElement(OverviewFilter $filter): array {
     if ($filter->getOverview()->getFieldWidget($this->id()) == 'checkboxes') {
       $options = $this->options ?? [];
@@ -26,6 +32,25 @@ class TaxonomyField extends OverviewFieldBase {
     return parent::getFieldFormElement($filter) + ['#options' => $options];
   }
 
+  /**
+   * @inheritDoc
+   */
+  public function getFilterValueFromFormStateValue($value): mixed {
+    $result = $value;
+    if (is_array($value)) {
+      $result = [];
+      foreach ($value as $value2) {
+        if ($value2) {
+          $result[] = $value2;
+        }
+      }
+    }
+    return $result;
+  }
+
+  /**
+   * @inheritDoc
+   */
   public function getFieldFormTransform(OverviewFilter $filter): array {
     return parent::getFieldFormTransform($filter) + ['options' => $this->options ?? []];
   }

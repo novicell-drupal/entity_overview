@@ -16,26 +16,44 @@ abstract class OverviewFieldBase implements OverviewFieldInfoInterface {
     $this->label = $label;
   }
 
+  /**
+   * @inheritDoc
+   */
   public function id(): string {
     return $this->field_name;
   }
 
+  /**
+   * @inheritDoc
+   */
   public function label(): string|TranslatableMarkup {
     return $this->label;
   }
 
+  /**
+   * @inheritDoc
+   */
   public function isBase(): bool {
     return FALSE;
   }
 
+  /**
+   * @inheritDoc
+   */
   public function canBeExposed(): bool {
     return TRUE;
   }
 
+  /**
+   * @inheritDoc
+   */
   public function requiresFacets(): bool {
     return FALSE;
   }
 
+  /**
+   * @inheritDoc
+   */
   public function getFieldFormElement(OverviewFilter $filter): array {
     $element = [
       '#type' => $filter->getOverview()->getFieldWidget($this->id()),
@@ -47,10 +65,30 @@ abstract class OverviewFieldBase implements OverviewFieldInfoInterface {
     return $element;
   }
 
+  /**
+   * @inheritDoc
+   */
+  public function setFieldFormElementAttribute(array &$form, $attribute, $value): void {
+    $form['#' . $attribute] = $value;
+  }
+
+  /**
+   * @inheritDoc
+   */
   public function updateFieldFormElementDefaultValue($value): mixed {
     return $value;
   }
 
+  /**
+   * @inheritDoc
+   */
+  public function getFilterValueFromFormStateValue($value): mixed {
+    return $value;
+  }
+
+  /**
+   * @inheritDoc
+   */
   public function getFieldFormTransform(OverviewFilter $filter): array {
     return [
       'type' => $filter->getOverview()->getFieldWidget($this->id()),

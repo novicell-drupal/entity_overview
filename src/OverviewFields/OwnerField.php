@@ -13,30 +13,51 @@ class OwnerField implements OverviewFieldInfoInterface {
   public function __construct() {
   }
 
+  /**
+   * @inheritDoc
+   */
   public function id(): string {
     return 'owner';
   }
 
+  /**
+   * @inheritDoc
+   */
   public function label(): string|TranslatableMarkup {
     return t('Author');
   }
 
+  /**
+   * @inheritDoc
+   */
   public function getWidgets(): array {
     return ['entity_autocomplete' => t('Autocomplete')];
   }
 
+  /**
+   * @inheritDoc
+   */
   public function isBase(): bool {
     return FALSE;
   }
 
+  /**
+   * @inheritDoc
+   */
   public function canBeExposed(): bool {
     return TRUE;
   }
 
+  /**
+   * @inheritDoc
+   */
   public function requiresFacets(): bool {
     return FALSE;
   }
 
+  /**
+   * @inheritDoc
+   */
   public function getFieldFormElement(OverviewFilter $filter): array {
     $user = NULL;
     if (!empty($filter->getFieldValue($this->id()))) {
@@ -50,6 +71,9 @@ class OwnerField implements OverviewFieldInfoInterface {
     ];
   }
 
+  /**
+   * @inheritDoc
+   */
   public function updateFieldFormElementDefaultValue($value): mixed {
     $user = NULL;
     if (!empty($value)) {
@@ -58,6 +82,23 @@ class OwnerField implements OverviewFieldInfoInterface {
     return $user;
   }
 
+  /**
+   * @inheritDoc
+   */
+  public function setFieldFormElementAttribute(array &$form, $attribute, $value): void {
+    $form['#' . $attribute] = $value;
+  }
+
+  /**
+   * @inheritDoc
+   */
+  public function getFilterValueFromFormStateValue($value): mixed {
+    return $value;
+  }
+
+  /**
+   * @inheritDoc
+   */
   public function getFieldFormTransform(OverviewFilter $filter): array {
     return [
       'type' => 'entity_autocomplete',

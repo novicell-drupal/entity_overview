@@ -425,16 +425,7 @@ class OverviewFilter {
         }
       } else {
         if ($form_state->hasValue($field)) {
-          $result = $form_state->getValue($field);
-          if (is_array($result)) {
-            $result = [];
-            foreach ($form_state->getValue($field) as $value2) {
-              if ($value2) {
-                $result[] = $value2;
-              }
-            }
-          }
-          $values['fields'][$field] = $result;
+          $values['fields'][$field] = $info->getFilterValueFromFormStateValue($form_state->getValue($field));
         }
       }
     }
