@@ -112,7 +112,7 @@ class OverviewFilterWidget extends WidgetBase {
     } else {
       $values['fields'] = [];
     }
-    $values['pagination'] = boolval($values['pagination']);
+    $values['pagination'] = boolval($values['pagination'] ?? FALSE);
 
     return $values;
   }
