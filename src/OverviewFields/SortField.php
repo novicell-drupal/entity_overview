@@ -93,7 +93,7 @@ class SortField implements OverviewFieldInfoInterface {
     $transformation = [
       'type' => 'select',
       'title' => $this->label(),
-      'options' => $filter->getOverview()->getEngine()->getSortCriterias(),
+      'options' => [],
       'default_value' => $filter->getSort()
     ];
     foreach ($filter->getOverview()->getEngine()->getSortCriterias() as $key => $value) {
