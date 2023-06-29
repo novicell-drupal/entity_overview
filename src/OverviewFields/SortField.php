@@ -90,12 +90,19 @@ class SortField implements OverviewFieldInfoInterface {
    * @inheritDoc
    */
   public function getFieldFormTransform(OverviewFilter $filter): array {
-    return [
+    $transformation = [
       'type' => 'select',
       'title' => $this->label(),
       'options' => $filter->getOverview()->getEngine()->getSortCriterias(),
       'default_value' => $filter->getSort()
     ];
+    foreach ($filter->getOverview()->getEngine()->getSortCriterias() as $key => $value) {
+      $transformation['options'][] = [
+        'key' => $key,
+        'value' => $value
+      ];
+    }
+    return $transformation;
   }
 
 }

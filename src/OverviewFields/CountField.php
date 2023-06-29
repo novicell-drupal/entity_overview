@@ -95,12 +95,20 @@ class CountField implements OverviewFieldInfoInterface {
    * @inheritDoc
    */
   public function getFieldFormTransform(OverviewFilter $filter): array {
-    return [
+    $transformation = [
       'type' => 'select',
       'title' => $this->label(),
-      'options' => $this->overviewManager->getCountOptions($filter->getOverviewId()),
+      'options' => [],
       'default_value' => $filter->getCount()
     ];
+    foreach ($this->overviewManager->getCountOptions($filter->getOverviewId()) as $key => $value) {
+      $transformation['options'][] = [
+        'key' => $key,
+        'value' => $value
+      ];
+    }
+    return $transformation;
+
   }
 
 }

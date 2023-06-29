@@ -52,7 +52,14 @@ class TaxonomyField extends OverviewFieldBase {
    * @inheritDoc
    */
   public function getFieldFormTransform(OverviewFilter $filter): array {
-    return parent::getFieldFormTransform($filter) + ['options' => $this->options ?? []];
+    $transformation = parent::getFieldFormTransform($filter) + ['options' => []];
+    foreach ($this->options ?? [] as $key => $value) {
+      $transformation['options'][] = [
+        'key' => $key,
+        'value' => $value
+      ];
+    }
+    return $transformation;
   }
 
   public static function createFromFieldDefinition(FieldDefinitionInterface $definition): TaxonomyField {
