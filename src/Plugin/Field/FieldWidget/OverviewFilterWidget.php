@@ -54,13 +54,18 @@ class OverviewFilterWidget extends WidgetBase {
    */
   public function formElement(FieldItemListInterface $items, $delta, array $element, array &$form, FormStateInterface $form_state) {
     /** @var FieldItemInterface $item */
-    $item = $items[$delta] ?? [];
+    $item = $items[$delta];
+    if (empty($item)) {
+      $fields = [];
+    } else {
+      $fields = $item->toArray();
+    }
     $overview_id = $this->getFieldSetting('overview');
     if (empty($overview_id)) {
       $entity_bundle = $this->getFieldSetting('entity_bundle');
       $overview_id = str_replace('node.', '', $entity_bundle);
     }
-    $filter = new OverviewFilter($overview_id, $item->toArray());
+    $filter = new OverviewFilter($overview_id, $fields);
     $element = $this->overviewManager->buildOverviewFilterForm($filter, $this->getFieldSetting('allow_facets'));
 
     // If cardinality is 1, ensure a proper label is output for the field.
