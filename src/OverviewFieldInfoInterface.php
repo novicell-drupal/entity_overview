@@ -51,6 +51,7 @@ interface OverviewFieldInfoInterface {
    * Returns a form element for display in backend or frontend facets.
    *
    * @param \Drupal\entity_overview\OverviewFilter $filter
+   *   The current filter values.
    *
    * @return array
    */

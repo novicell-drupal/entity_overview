@@ -24,12 +24,7 @@ class TaxonomyField extends OverviewFieldBase {
    * @inheritDoc
    */
   public function getFieldFormElement(OverviewFilter $filter): array {
-    if ($filter->getOverview()->getFieldWidget($this->id()) == 'checkboxes') {
-      $options = $this->options ?? [];
-    } else {
-      $options = ['' => t('All')] + $this->options ?? [];
-    }
-    return parent::getFieldFormElement($filter) + ['#options' => $options];
+    return parent::getFieldFormElement($filter) + ['#options' => $this->getOptions($filter)];
   }
 
   /**
@@ -49,11 +44,29 @@ class TaxonomyField extends OverviewFieldBase {
   }
 
   /**
+   * Get a list of options for the field widget.
+   *
+   * @param \Drupal\entity_overview\OverviewFilter $filter
+   *   The current filter values.
+   *
+   * @return array
+   *   List of options for the field widget.
+   */
+  public function getOptions(OverviewFilter $filter): array {
+    if ($filter->getOverview()->getFieldWidget($this->id()) == 'checkboxes') {
+      $options = $this->options ?? [];
+    } else {
+      $options = ['' => t('All')] + $this->options ?? [];
+    }
+    return $options;
+  }
+
+  /**
    * @inheritDoc
    */
   public function getFieldFormTransform(OverviewFilter $filter): array {
     $transformation = parent::getFieldFormTransform($filter) + ['options' => []];
-    foreach ($this->options ?? [] as $key => $value) {
+    foreach ($this->getOptions($filter) as $key => $value) {
       $transformation['options'][] = [
         'key' => $key,
         'value' => $value
