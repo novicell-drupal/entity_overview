@@ -168,6 +168,9 @@ class OverviewManager {
   public function buildOverviewFilterForm(OverviewFilter $filter, $allow_facets = TRUE): array {
     $overview = $filter->getOverview();
     $form = ['fields' => []];
+    if (is_null($overview)) {
+      return $form;
+    }
     $field_info = $this->getAllFieldInfos($overview);
 
     foreach ($field_info as $field => $info) {
