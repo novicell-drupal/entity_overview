@@ -141,18 +141,39 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
    */
   public function getCacheableMetadata(OverviewFilter $filter, bool $has_facets): CacheableMetadata {
     $cache = new CacheableMetadata();
+
     if ($has_facets) {
       if ($this->overviewManager->deepLinksEnabled()) {
         $cache->addCacheContexts(['url.query_args']);
         $this->killSwitch->trigger();
       }
     }
+
     $tags = [];
+
     foreach ($filter->getOverview()->getEntityBundles() as $entity_type_id => $bundles) {
-      $tags += $this->entityTypeManager->getDefinition($entity_type_id)->getListCacheTags();
+      $tags = Cache::mergeTags($tags, $this->entityTypeManager->getDefinition($entity_type_id)->getListCacheTags());
     }
+
+    $overview = $filter->getOverview();
+
+    $definitions = $this->getFieldDefinitions($overview);
+    $active_fields = array_keys($overview->getFields());
+
+    foreach ($definitions as $definition) {
+      if ($definition->getType() == 'entity_reference' && in_array($definition->getName(), $active_fields)) {
+        $type = $definition->getSetting('target_type');
+
+        if ($type !== NULL) {
+          // Add the list cache tags for each entity type referenced by overview fields.
+          $tags = Cache::mergeTags($tags, $this->entityTypeManager->getDefinition($type)->getListCacheTags());
+        }
+      }
+    }
+
     $cache->addCacheableDependency($filter->getOverview());
     $cache->addCacheTags($tags);
+
     return $cache;
   }
 
