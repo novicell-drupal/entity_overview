@@ -89,7 +89,14 @@ class TaxonomyField extends OverviewFieldBase {
     }
     $tids = $query->accessCheck(TRUE)->execute();
     $terms = $storage->loadMultiple($tids);
+
+    $langcode = \Drupal::languageManager()->getCurrentLanguage()->getId();
+
     foreach ($terms as $term) {
+      if ($term->hasTranslation($langcode)) {
+        $term = $term->getTranslation($langcode);
+      }
+
       $options[$term->id()] = $term->label();
     }
     return new self($definition->getName(), $label, $options);
