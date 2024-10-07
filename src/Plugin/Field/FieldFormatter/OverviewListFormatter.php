@@ -122,7 +122,7 @@ class OverviewListFormatter extends FormatterBase {
     $overview = $this->overviewManager->getOverview($this->fieldDefinition->getSetting('overview'));
     $summary = [];
     $summary[] = $this->t('View mode: @view_mode', [
-      '@view_mode' => $this->overviewManager->getViewModes($overview)[$this->getSetting('view_mode')]
+      '@view_mode' => $this->overviewManager->getViewModes($overview)[$this->getSetting('view_mode')] ?? 'default',
     ]);
 
     return $summary;
