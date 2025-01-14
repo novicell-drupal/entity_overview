@@ -15,6 +15,7 @@ use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\entity_overview\Entity\Overview;
 use Drupal\entity_overview\OverviewFields\DateField;
+use Drupal\entity_overview\OverviewFields\EntityReferenceField;
 use Drupal\entity_overview\OverviewFields\OwnerField;
 use Drupal\entity_overview\OverviewFields\SearchTextField;
 use Drupal\entity_overview\OverviewFields\TaxonomyField;
@@ -240,14 +241,8 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
       foreach ($entity_bundles[$entity_type_id] as $bundle) {
         $definitions = \Drupal::service('entity_field.manager')->getFieldDefinitions($entity_type_id, $bundle);
         foreach ($definitions as $field_name => $definition) {
-          // TODO: Support more entity types than taxonomy
-          if ($definition->getType() == 'entity_reference' && in_array($definition->getSetting('target_type'), [
-              'taxonomy_term',
-              /*'user', 'media'*/
-            ])) {
-            if (count($definition->getSetting('handler_settings')['target_bundles']) == 1) {
-              $this->supportedFields[$field_name] = $definition->getLabel();
-            }
+          if ($definition->getType() == 'entity_reference') {
+            $this->supportedFields[$field_name] = $definition->getLabel();
           }
           if (in_array($definition->getType(), [
             'datetime'
@@ -281,8 +276,6 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
       switch ($definition->getType()) {
         case 'entity_reference':
           $settings = $definition->getSettings() ?? [];
-          $storage = $this->entityTypeManager->getStorage($settings['target_type']);
-          // TODO: Support more entity types than taxonomy
           if ($settings['target_type'] == 'taxonomy_term') {
             if (count($settings['handler_settings']['target_bundles']) == 1) {
               return TaxonomyField::createFromFieldDefinition($definition);
@@ -291,8 +284,7 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
               return NULL;
             }
           } else {
-            \Drupal::logger('entity_overview')->error('Field %field is not supported by Entity Overview', ['%field' => $field]);
-            return NULL;
+            return EntityReferenceField::createFromFieldDefinition($definition);
           }
         case 'datetime':
           return new DateField($field, $definition->getLabel(), $definition->getSetting('datetime_type'));

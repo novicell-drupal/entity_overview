@@ -2,9 +2,10 @@
 namespace Drupal\entity_overview\OverviewFields;
 
 use Drupal\Core\Field\FieldDefinitionInterface;
+use Drupal\entity_overview\OverviewFields\OverviewFieldBase;
 use Drupal\entity_overview\OverviewFilter;
 
-class TaxonomyField extends OverviewFieldBase {
+class EntityReferenceField extends OverviewFieldBase {
 
   protected array $options = [];
 
@@ -75,29 +76,34 @@ class TaxonomyField extends OverviewFieldBase {
     return $transformation;
   }
 
-  public static function createFromFieldDefinition(FieldDefinitionInterface $definition): TaxonomyField {
+  public static function createFromFieldDefinition(FieldDefinitionInterface $definition): EntityReferenceField {
     $settings = $definition->getSettings() ?? [];
-    $storage = \Drupal::entityTypeManager()
+    $entityTypeManager = \Drupal::entityTypeManager();
+    $storage = $entityTypeManager
       ->getStorage($settings['target_type']);
+    $entity_type = $entityTypeManager->getDefinition($settings['target_type']);
+    $keys = $entity_type->getKeys();
     $label = $definition->getLabel();
     $options = [];
-    $vid = reset($settings['handler_settings']['target_bundles']);
+    $bundles = array_values($settings['handler_settings']['target_bundles'] ?? []);
     $query = $storage->getQuery();
-    $query->condition('vid', $vid);
+    if (!empty($bundles) && !empty($keys['bundle'])) {
+      $query->condition($keys['bundle'], $bundles);
+    }
     if (isset($settings['handler_settings']['sort']['field']) && $settings['handler_settings']['sort']['field'] !== '_none' && isset($settings['handler_settings']['sort']['direction'])) {
       $query->sort($settings['handler_settings']['sort']['field'], $settings['handler_settings']['sort']['direction']);
     }
-    $tids = $query->accessCheck(TRUE)->execute();
-    $terms = $storage->loadMultiple($tids);
+    $ids = $query->accessCheck(TRUE)->execute();
+    $entities = $storage->loadMultiple($ids);
 
     $langcode = \Drupal::languageManager()->getCurrentLanguage()->getId();
 
-    foreach ($terms as $term) {
-      if ($term->hasTranslation($langcode)) {
-        $term = $term->getTranslation($langcode);
+    foreach ($entities as $entity) {
+      if ($entity->hasTranslation($langcode)) {
+        $entity = $entity->getTranslation($langcode);
       }
 
-      $options[$term->id()] = $term->label();
+      $options[$entity->id()] = $entity->label();
     }
     return new self($definition->getName(), $label, $options);
   }
