@@ -1,6 +1,7 @@
 <?php
 namespace Drupal\entity_overview\OverviewFields;
 
+use Drupal\Core\Entity\TranslatableInterface;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\entity_overview\OverviewFields\OverviewFieldBase;
 use Drupal\entity_overview\OverviewFilter;
@@ -99,7 +100,7 @@ class EntityReferenceField extends OverviewFieldBase {
     $langcode = \Drupal::languageManager()->getCurrentLanguage()->getId();
 
     foreach ($entities as $entity) {
-      if ($entity->hasTranslation($langcode)) {
+      if ($entity instanceof TranslatableInterface && $entity->hasTranslation($langcode)) {
         $entity = $entity->getTranslation($langcode);
       }
 
