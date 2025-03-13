@@ -129,28 +129,30 @@ class OverviewAddForm extends EntityForm {
     if (!empty($engine)) {
       $form['settings']['engine_settings'] = $engine->settingsForm([], $form_state);
 
-      $form['settings']['entity_bundles'] = [
-        '#type' => 'details',
-        '#title' => $this->t('Entity types'),
-        '#open' => TRUE,
-        '#required' => TRUE
-      ];
-
-      $entity_bundles = $this->entity->getEntityBundles();
-      $entity_types = $engine->getSupportedEntityTypes();
-      foreach ($entity_types as $entity_type) {
-        $options = [];
-        foreach ($entity_type['bundles'] as $bundle_id => $bundle) {
-          $options[$bundle_id] = $bundle['label'];
-        }
-
-        $form['settings']['entity_bundles'][$entity_type['id']] = [
-          '#type' => 'checkboxes',
-          '#title' => $entity_type['label'],
-          '#description' => $this->t(''),
-          '#options' => $options,
-          '#default_value' => $entity_bundles[$entity_type['id']] ?? [],
+      if ($engine->usesEntityTypes()) {
+        $form['settings']['entity_bundles'] = [
+          '#type' => 'details',
+          '#title' => $this->t('Entity types'),
+          '#open' => TRUE,
+          '#required' => TRUE
         ];
+
+        $entity_bundles = $this->entity->getEntityBundles();
+        $entity_types = $engine->getSupportedEntityTypes();
+        foreach ($entity_types as $entity_type) {
+          $options = [];
+          foreach ($entity_type['bundles'] as $bundle_id => $bundle) {
+            $options[$bundle_id] = $bundle['label'];
+          }
+
+          $form['settings']['entity_bundles'][$entity_type['id']] = [
+            '#type' => 'checkboxes',
+            '#title' => $entity_type['label'],
+            '#description' => $this->t(''),
+            '#options' => $options,
+            '#default_value' => $entity_bundles[$entity_type['id']] ?? [],
+          ];
+        }
       }
     }
 

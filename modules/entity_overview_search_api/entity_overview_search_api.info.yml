@@ -1,0 +1,12 @@
+
+name: Entity Overview Search API
+description: Search API support for Entity Overview
+type: module
+core_version_requirement: ^9 || ^10 || ^11
+version: '3.3'
+
+dependencies:
+  - search_api:search_api
+
+interface translation project: entity_overview_search_api
+interface translation server pattern: modules/contrib/entity_overview_search_api/translations/%language.po

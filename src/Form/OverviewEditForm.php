@@ -100,24 +100,12 @@ class OverviewEditForm extends EntityForm {
     ];
 
     $bundles = $this->entity->getEntityBundles();
-    $entity_types = $this->overviewManager->getSupportedEntityTypes();
     $form['entity_bundles_item'] = [
       '#type' => 'item',
       '#title' => $this->t('Entity types'),
-      '#description' => '',
+      '#description' => $engine->getEngineSummary($this->entity),
       '#default_value' => $bundles
     ];
-    foreach ($entity_types as $entity_type) {
-      $entity_type_id = $entity_type['id'];
-      if (empty($bundles[$entity_type_id])) {
-        continue;
-      }
-      $bundle_labels = [];
-      foreach ($bundles[$entity_type_id] as $bundle) {
-        $bundle_labels[] = $entity_types[$entity_type_id]['label'] . ' (' . $entity_types[$entity_type_id]['bundles'][$bundle]['label'] . ')';
-      }
-      $form['entity_bundles_item']['#description'] = implode(', ', $bundle_labels);
-    }
 
     $form['fields'] = [
       '#type' => 'details',

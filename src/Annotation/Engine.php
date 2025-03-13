@@ -43,6 +43,13 @@ class Engine extends Plugin {
   public $facets;
 
   /**
+   * Whether the plugin uses entity types for indexing.
+   *
+   * @var boolean
+   */
+  public $entity_types;
+
+  /**
    * Whether the plugin supports global overviews.
    *
    * @var boolean

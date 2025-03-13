@@ -20,6 +20,13 @@ interface EngineInterface extends PluginInspectionInterface, DerivativeInspectio
   public function label(): string|TranslatableMarkup;
 
   /**
+   * Does the engine use entity types for indexing?
+   *
+   * @return bool
+   */
+  public function usesEntityTypes(): bool;
+
+  /**
    * Does the engine support multiple entity types at once?
    *
    * @return bool
@@ -159,4 +166,11 @@ interface EngineInterface extends PluginInspectionInterface, DerivativeInspectio
    * @return array
    */
   public function getSupportedEntityTypes();
+
+  /**
+   * Returns a summary of what the overview covers from the engine.
+   *
+   * @return string|\Drupal\Core\StringTranslation\TranslatableMarkup;
+   */
+  public function getEngineSummary(Overview $overview): string|TranslatableMarkup;
 }

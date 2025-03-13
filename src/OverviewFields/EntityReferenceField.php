@@ -3,6 +3,7 @@ namespace Drupal\entity_overview\OverviewFields;
 
 use Drupal\Core\Entity\TranslatableInterface;
 use Drupal\Core\Field\FieldDefinitionInterface;
+use Drupal\Core\TypedData\DataDefinitionInterface;
 use Drupal\entity_overview\OverviewFields\OverviewFieldBase;
 use Drupal\entity_overview\OverviewFilter;
 
@@ -77,19 +78,18 @@ class EntityReferenceField extends OverviewFieldBase {
     return $transformation;
   }
 
-  public static function createFromFieldDefinition(FieldDefinitionInterface $definition): EntityReferenceField {
+  public static function createFromDataDefinition($name, $label, DataDefinitionInterface $definition): EntityReferenceField {
     $settings = $definition->getSettings() ?? [];
     $entityTypeManager = \Drupal::entityTypeManager();
     $storage = $entityTypeManager
       ->getStorage($settings['target_type']);
     $entity_type = $entityTypeManager->getDefinition($settings['target_type']);
     $keys = $entity_type->getKeys();
-    $label = $definition->getLabel();
     $options = [];
     $bundles = array_values($settings['handler_settings']['target_bundles'] ?? []);
     $query = $storage->getQuery();
     if (!empty($bundles) && !empty($keys['bundle'])) {
-      $query->condition($keys['bundle'], $bundles);
+      $query->condition($keys['bundle'], $bundles, 'IN');
     }
     if (isset($settings['handler_settings']['sort']['field']) && $settings['handler_settings']['sort']['field'] !== '_none' && isset($settings['handler_settings']['sort']['direction'])) {
       $query->sort($settings['handler_settings']['sort']['field'], $settings['handler_settings']['sort']['direction']);
@@ -106,6 +106,10 @@ class EntityReferenceField extends OverviewFieldBase {
 
       $options[$entity->id()] = $entity->label();
     }
-    return new self($definition->getName(), $label, $options);
+    return new self($name, $label, $options);
+  }
+
+  public static function createFromFieldDefinition(FieldDefinitionInterface $definition): EntityReferenceField {
+    return self::createFromDataDefinition($definition->getName(), $definition->getLabel(), $definition);
   }
 }

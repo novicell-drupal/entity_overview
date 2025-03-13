@@ -1,0 +1,45 @@
+<?php
+
+use Drupal\Core\Form\FormStateInterface;
+
+/**
+ * Implements hook_locale_translation_projects_alter().
+ */
+function entity_overview_search_api_locale_translation_projects_alter(&$projects) {
+  $module_handler = \Drupal::service('module_handler');
+  $path = $module_handler->getModule('entity_overview_search_api')->getPath();
+  $projects['entity_overview_search_api']['info']['interface translation server pattern'] = $path.'/translations/%language.po';
+}
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter() for "search_api_page_block_form".
+ *
+ * Adds autocompletion to the keywords field on overviews, if enabled by the
+ * user.
+ *
+ * @see \Drupal\entity_overview\Form\OverviewFilterForm
+ * @see \Drupal\entity_overview_search_api\Plugin\search_api_autocomplete\search\Overview
+ */
+function entity_overview_search_api_form_entity_overview_filter_form_alter(array &$form, FormStateInterface $form_state, $form_id) {
+  if (!\Drupal::moduleHandler()->moduleExists('search_api_autocomplete')) {
+    return;
+  }
+  $overview_id = $form['#overview'];
+  /** @var \Drupal\search_api_autocomplete\Entity\SearchStorage $search_storage */
+  $search_storage = \Drupal::entityTypeManager()
+    ->getStorage('search_api_autocomplete_search');
+  $plugin_id = 'entity_overview:' . $overview_id;
+  $search = $search_storage->loadBySearchPlugin($plugin_id);
+
+  $cache_tag = "search_api_autocomplete_search_list:$plugin_id";
+  if (!isset($form['#cache']['tags'])
+    || !in_array($cache_tag, $form['#cache']['tags'])) {
+    $form['#cache']['tags'][] = $cache_tag;
+  }
+
+  if ($search && $search->status()) {
+    \Drupal::getContainer()
+      ->get('search_api_autocomplete.helper')
+      ->alterElement($form['facets']['text'], $search);
+  }
+}

@@ -13,6 +13,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\PageCache\ResponsePolicy\KillSwitch;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\entity_overview\Entity\Overview;
 use Drupal\entity_overview\OverviewFields\DateField;
 use Drupal\entity_overview\OverviewFields\EntityReferenceField;
@@ -78,6 +79,13 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
   /**
    * @inheritDoc
    */
+  public function usesEntityTypes(): bool {
+    return $this->pluginDefinition['entity_types'] ?? TRUE;
+  }
+
+  /**
+   * @inheritDoc
+   */
   public function supportsMultipleEntities(): bool {
     return $this->pluginDefinition['multiple'] ?? FALSE;
   }
@@ -87,6 +95,27 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
    */
   public function supportsSearchTermRecommendations(): bool {
     return $this->pluginDefinition['recommendations'] ?? FALSE;
+  }
+
+  /**
+   * @inheritDoc
+   */
+  public function getEngineSummary(Overview $overview): string|TranslatableMarkup {
+    $bundles = $overview->getEntityBundles();
+    $entity_types = $this->overviewManager->getSupportedEntityTypes();
+    $summary = '';
+    foreach ($entity_types as $entity_type) {
+      $entity_type_id = $entity_type['id'];
+      if (empty($bundles[$entity_type_id])) {
+        continue;
+      }
+      $bundle_labels = [];
+      foreach ($bundles[$entity_type_id] as $bundle) {
+        $bundle_labels[] = $entity_types[$entity_type_id]['label'] . ' (' . $entity_types[$entity_type_id]['bundles'][$bundle]['label'] . ')';
+      }
+      $summary = implode(', ', $bundle_labels);
+    }
+    return $summary;
   }
 
   /**
@@ -401,9 +430,7 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
   }
 
   /**
-   * Returns list of all entity types that is supported for overviews.
-   *
-   * @return array
+   * {@inheritdoc}
    */
   public function getSupportedEntityTypes() {
     /** @var \Drupal\Core\Entity\EntityTypeBundleInfoInterface $entityTypeBundleInfo */

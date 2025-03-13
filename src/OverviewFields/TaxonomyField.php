@@ -2,7 +2,10 @@
 namespace Drupal\entity_overview\OverviewFields;
 
 use Drupal\Core\Field\FieldDefinitionInterface;
+use Drupal\Core\TypedData\DataDefinitionInterface;
 use Drupal\entity_overview\OverviewFilter;
+use Drupal\taxonomy\Entity\Term;
+use Drupal\taxonomy\TermInterface;
 
 class TaxonomyField extends OverviewFieldBase {
 
@@ -75,11 +78,10 @@ class TaxonomyField extends OverviewFieldBase {
     return $transformation;
   }
 
-  public static function createFromFieldDefinition(FieldDefinitionInterface $definition): TaxonomyField {
+  public static function createFromDataDefinition($name, $label, DataDefinitionInterface $definition): TaxonomyField {
     $settings = $definition->getSettings() ?? [];
     $storage = \Drupal::entityTypeManager()
       ->getStorage($settings['target_type']);
-    $label = $definition->getLabel();
     $options = [];
     $vid = reset($settings['handler_settings']['target_bundles']);
     $query = $storage->getQuery();
@@ -92,6 +94,7 @@ class TaxonomyField extends OverviewFieldBase {
 
     $langcode = \Drupal::languageManager()->getCurrentLanguage()->getId();
 
+    /** @var TermInterface $term */
     foreach ($terms as $term) {
       if ($term->hasTranslation($langcode)) {
         $term = $term->getTranslation($langcode);
@@ -99,6 +102,10 @@ class TaxonomyField extends OverviewFieldBase {
 
       $options[$term->id()] = $term->label();
     }
-    return new self($definition->getName(), $label, $options);
+    return new self($name, $label, $options);
+  }
+
+  public static function createFromFieldDefinition(FieldDefinitionInterface $definition): TaxonomyField {
+    return self::createFromDataDefinition($definition->getName(), $definition->getLabel(), $definition);
   }
 }
