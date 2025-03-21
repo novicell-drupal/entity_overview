@@ -13,7 +13,7 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * Provides autocomplete support for the search_api_page module.
+ * Provides autocomplete support for the entity_overview_search_api module.
  *
  * @SearchApiAutocompleteSearch(
  *   id = "entity_overview",

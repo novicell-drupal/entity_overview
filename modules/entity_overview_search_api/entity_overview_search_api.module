@@ -1,6 +1,7 @@
 <?php
 
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\entity_overview\OverviewFilter;
 
 /**
  * Implements hook_locale_translation_projects_alter().
@@ -12,7 +13,7 @@ function entity_overview_search_api_locale_translation_projects_alter(&$projects
 }
 
 /**
- * Implements hook_form_BASE_FORM_ID_alter() for "search_api_page_block_form".
+ * Implements hook_form_alter() for OverviewFilterForm and subclasses.
  *
  * Adds autocompletion to the keywords field on overviews, if enabled by the
  * user.
@@ -20,7 +21,10 @@ function entity_overview_search_api_locale_translation_projects_alter(&$projects
  * @see \Drupal\entity_overview\Form\OverviewFilterForm
  * @see \Drupal\entity_overview_search_api\Plugin\search_api_autocomplete\search\Overview
  */
-function entity_overview_search_api_form_entity_overview_filter_form_alter(array &$form, FormStateInterface $form_state, $form_id) {
+function entity_overview_search_api_form_alter(array &$form, FormStateInterface &$form_state, $form_id) {
+  if (!isset($form['#overview'])) {
+    return;
+  }
   if (!\Drupal::moduleHandler()->moduleExists('search_api_autocomplete')) {
     return;
   }
