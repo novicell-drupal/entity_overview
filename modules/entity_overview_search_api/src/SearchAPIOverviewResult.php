@@ -65,7 +65,7 @@ class SearchAPIOverviewResult implements OverviewResultInterface {
    */
   public function getResultsCount() {
     if (!isset($this->counts['results'])) {
-      $this->counts['results'] = $this->engine->getResultsCount($this->filter);
+      $this->getResult();
     }
     return $this->counts['results'];
   }

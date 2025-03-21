@@ -3,26 +3,54 @@
 namespace Drupal\entity_overview_search\Form;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Config\TypedConfigManagerInterface;
 use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\ConfigFormBase;
+use Drupal\Core\Form\ConfigFormBaseTrait;
+use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\entity_overview\EngineManager;
 use Drupal\entity_overview\OverviewFilter;
 use Drupal\entity_overview\OverviewManager;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
-class OverviewSearchSettings extends ConfigFormBase {
+class OverviewSearchSettings extends FormBase {
+  use ConfigFormBaseTrait;
 
-  protected $entityTypeManager;
-  protected $entityFieldManager;
-  protected $entityTypeBundleInfo;
-  protected $overviewManager;
-  protected $engineManager;
+  /**
+   * @var \Drupal\Core\Config\ConfigFactoryInterface
+   */
+  private ConfigFactoryInterface $config_factory;
+
+  /**
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
+   */
+  private EntityTypeManagerInterface $entityTypeManager;
+
+  /**
+   * @var \Drupal\Core\Entity\EntityFieldManagerInterface
+   */
+  private EntityFieldManagerInterface $entityFieldManager;
+
+  /**
+   * @var \Drupal\Core\Entity\EntityTypeBundleInfoInterface
+   */
+  private EntityTypeBundleInfoInterface $entityTypeBundleInfo;
+
+  /**
+   * @var \Drupal\entity_overview\OverviewManager
+   */
+  private OverviewManager $overviewManager;
+
+  /**
+   * @var \Drupal\entity_overview\EngineManager
+   */
+  private EngineManager $engineManager;
 
   function __construct(ConfigFactoryInterface $config_factory, EntityTypeManagerInterface $entityTypeManager, EntityFieldManagerInterface $entityFieldManager, EntityTypeBundleInfoInterface $entityTypeBundleInfo, OverviewManager $overviewManager, EngineManager $engineManager) {
-    parent::__construct($config_factory);
+    $this->config_factory = $config_factory;
     $this->entityTypeManager = $entityTypeManager;
     $this->entityFieldManager = $entityFieldManager;
     $this->entityTypeBundleInfo = $entityTypeBundleInfo;
@@ -62,7 +90,15 @@ class OverviewSearchSettings extends ConfigFormBase {
    * @inheritDoc
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
-    $form = parent::buildForm($form, $form_state);
+    $form['actions']['#type'] = 'actions';
+    $form['actions']['submit'] = [
+      '#type' => 'submit',
+      '#value' => $this->t('Save configuration'),
+      '#button_type' => 'primary',
+    ];
+
+    // By default, render the form using system-config-form.html.twig.
+    $form['#theme'] = 'system_config_form';
     $form['#tree'] = TRUE;
 
     $config = $this->config('entity_overview_search.settings');
@@ -117,13 +153,13 @@ class OverviewSearchSettings extends ConfigFormBase {
     $config->setData(['overview' => $overview_id]);
 
     if (!empty($overview_id)) {
-      $filter = OverviewFilter::createFromFormValues($overview_id, $form_state->getValue('settings'));
+      $filter = OverviewFilter::createFromFormValues($overview_id, $form_state->getValue('settings') ?? []);
       $filter->setShowTotal($filter->getOverview()->getShowTotal());
       $config->set('filter', $filter->toArray());
     }
 
     $config->save();
-    parent::submitForm($form, $form_state);
+    $this->messenger()->addStatus($this->t('The configuration options have been saved.'));
   }
 
   /**

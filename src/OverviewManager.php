@@ -302,15 +302,28 @@ class OverviewManager {
   public function getViewModes(Overview $overview): array {
     /** @var \Drupal\Core\Entity\EntityDisplayRepositoryInterface $repository */
     $repository = \Drupal::service('entity_display.repository');
-    $view_modes = NULL;
-    foreach ($overview->getEntityBundles() as $entity_type_id => $bundles) {
-      foreach ($bundles as $bundle) {
-        if (is_null($view_modes)) {
-          $view_modes = $repository->getViewModeOptionsByBundle($entity_type_id, $bundle);
+    $view_modes = [];
+    if (empty($overview->getEntityBundles())) {
+      foreach ($repository->getAllViewModes() as $entity_type_id => $bundles) {
+        if (empty($view_modes)) {
+          $view_modes = $repository->getViewModeOptions($entity_type_id);
         } else {
-          $view_modes = array_intersect_key($view_modes, $repository->getViewModeOptionsByBundle($entity_type_id, $bundle));
+          $view_modes = array_merge($view_modes, $repository->getViewModeOptions($entity_type_id));
         }
       }
+    } else {
+      foreach ($overview->getEntityBundles() as $entity_type_id => $bundles) {
+        foreach ($bundles as $bundle) {
+          if (empty($view_modes)) {
+            $view_modes = $repository->getViewModeOptionsByBundle($entity_type_id, $bundle);
+          } else {
+            $view_modes = array_intersect_key($view_modes, $repository->getViewModeOptionsByBundle($entity_type_id, $bundle));
+          }
+        }
+      }
+    }
+    if (empty($view_modes)) {
+      $view_modes = ['default' => $this->t('Default')] + $view_modes;
     }
     return $view_modes;
   }
