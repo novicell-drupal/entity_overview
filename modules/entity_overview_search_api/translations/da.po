@@ -33,6 +33,12 @@ msgstr "Ejer felt"
 msgid "What field to use for the owner filter."
 msgstr "Hvilket felt skal bruges til ejer filtret."
 
+msgid "Language field"
+msgstr "Sprog felt"
+
+msgid "What field to use for the filtering language."
+msgstr "Hvilket felt skal bruges til filtrere sprog."
+
 msgid "Full text fields"
 msgstr "Fuldtekst felter"
 

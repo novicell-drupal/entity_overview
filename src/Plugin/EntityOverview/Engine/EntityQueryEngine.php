@@ -8,6 +8,7 @@ use Drupal\Core\Cache\Cache;
 use Drupal\Core\DependencyInjection\DependencySerializationTrait;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Entity\TranslatableInterface;
 use Drupal\Core\PageCache\ResponsePolicy\KillSwitch;
 use Drupal\entity_overview\EngineBase;
 use Drupal\entity_overview\Entity\Overview;
@@ -62,10 +63,16 @@ class EntityQueryEngine extends EngineBase {
   public function getResult(OverviewFilter $filter) {
     $overview = $filter->getOverview();
     $storage = $this->entityTypeManager->getStorage($this->getEntityTypeID($overview));
-    $keys = $this->entityTypeManager->getDefinition($this->getEntityTypeID($overview))->getKeys();
+    $definition = $this->entityTypeManager->getDefinition($this->getEntityTypeID($overview));
+    $keys = $definition->getKeys();
     $query = $storage->getQuery()
       ->condition($keys['bundle'], $this->getBundles($overview), 'IN')
       ->condition('status', 1);
+    if ($definition->isTranslatable()) {
+      $query->condition($keys['langcode'], \Drupal::languageManager()
+        ->getCurrentLanguage()
+        ->getId());
+    }
     foreach ($filter->getFieldValues() as $field_name => $value) {
       if (empty($value)) {
         continue;
@@ -122,7 +129,15 @@ class EntityQueryEngine extends EngineBase {
     } catch (PluginNotFoundException $e) {
       return [];
     }
-    return $storage->loadMultiple($ids);
+    $entities = $storage->loadMultiple($ids);
+    foreach ($entities as $id => $entity) {
+      if ($entity instanceof TranslatableInterface) {
+        if ($entity->hasTranslation(\Drupal::languageManager()->getCurrentLanguage()->getId())) {
+          $entities[$id] = $entity->getTranslation(\Drupal::languageManager()->getCurrentLanguage()->getId());
+        }
+      }
+    }
+    return $entities;
   }
 
   public function getResultsCount(OverviewFilter $filter) {

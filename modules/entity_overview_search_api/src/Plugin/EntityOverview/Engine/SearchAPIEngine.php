@@ -3,8 +3,10 @@
 namespace Drupal\entity_overview_search_api\Plugin\EntityOverview\Engine;
 
 use Drupal\Core\DependencyInjection\DependencySerializationTrait;
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Entity\Plugin\DataType\EntityAdapter;
+use Drupal\Core\Entity\TranslatableInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\PageCache\ResponsePolicy\KillSwitch;
 use Drupal\Core\Pager\PagerManagerInterface;
@@ -114,6 +116,11 @@ class SearchAPIEngine extends EngineBase {
       $query->keys($filter->getFieldValue('text'));
       $query->setFulltextFields($this->getSetting('fulltext_fields'));
     }
+    if (!empty($this->getSetting('language_field'))) {
+      $query->addCondition($this->getSetting('language_field') ?? 'langcode', \Drupal::languageManager()
+        ->getCurrentLanguage()
+        ->getId());
+    }
     foreach ($filter->getFieldValues() as $field_name => $value) {
       if (empty($value)) {
         continue;
@@ -176,6 +183,13 @@ class SearchAPIEngine extends EngineBase {
       $object = $resultItem->getOriginalObject(true);
       if ($object instanceof EntityAdapter) {
         $entities[] = $object->getEntity();
+      }
+    }
+    foreach ($entities as $id => $entity) {
+      if ($entity instanceof \Drupal\Core\TypedData\TranslatableInterface) {
+        if ($entity->hasTranslation(\Drupal::languageManager()->getCurrentLanguage()->getId())) {
+          $entities[$id] = $entity->getTranslation(\Drupal::languageManager()->getCurrentLanguage()->getId());
+        }
       }
     }
     return $entities;
@@ -278,6 +292,22 @@ class SearchAPIEngine extends EngineBase {
             '' =>  ' - ' . $this->t('None') . ' - '
           ] + $options,
         '#default_value' => $this->getSetting('owner_field') ?? ''
+      ];
+
+      $options = [];
+      foreach ($index->getFields(true) as $id => $field) {
+        if (in_array($field->getType(), ['string'])) {
+          $options[$id] = $field->getLabel();
+        }
+      }
+      $form['language_field'] = [
+        '#type' => 'select',
+        '#title' => $this->t('Language field'),
+        '#description' => $this->t('What field to use for the filtering language.'),
+        '#options' => [
+            '' =>  ' - ' . $this->t('None') . ' - '
+          ] + $options,
+        '#default_value' => $this->getSetting('language_field') ?? ''
       ];
 
       $options = [];
