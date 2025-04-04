@@ -8,7 +8,9 @@ use Drupal\Core\Cache\Cache;
 use Drupal\Core\DependencyInjection\DependencySerializationTrait;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Entity\Query\QueryInterface;
 use Drupal\Core\Entity\TranslatableInterface;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\PageCache\ResponsePolicy\KillSwitch;
 use Drupal\entity_overview\EngineBase;
 use Drupal\entity_overview\Entity\Overview;
@@ -58,21 +60,16 @@ class EntityQueryEngine extends EngineBase {
   }
 
   /**
-   * @inheritDoc
+   * Add query conditions for the field values,
+   *
+   * @param QueryInterface $query
+   *   The current entity query.
+   * @param OverviewFilter $filter
+   *   The overview filter.
+   * @param array $keys
+   *   Entity Type keys definition.
    */
-  public function getResult(OverviewFilter $filter) {
-    $overview = $filter->getOverview();
-    $storage = $this->entityTypeManager->getStorage($this->getEntityTypeID($overview));
-    $definition = $this->entityTypeManager->getDefinition($this->getEntityTypeID($overview));
-    $keys = $definition->getKeys();
-    $query = $storage->getQuery()
-      ->condition($keys['bundle'], $this->getBundles($overview), 'IN')
-      ->condition('status', 1);
-    if ($definition->isTranslatable()) {
-      $query->condition($keys['langcode'], \Drupal::languageManager()
-        ->getCurrentLanguage()
-        ->getId());
-    }
+  protected function getFieldFilters(QueryInterface $query, OverviewFilter $filter, array $keys) {
     foreach ($filter->getFieldValues() as $field_name => $value) {
       if (empty($value)) {
         continue;
@@ -86,13 +83,20 @@ class EntityQueryEngine extends EngineBase {
         $query->condition($field_name, $value);
       }
     }
-    if ($filter->hasPagination()) {
-      // Do not use dependency injection for the request, or it will be serialized with the form state
-      \Drupal::requestStack()->getCurrentRequest()->query->set('page', $filter->getPage());
-      $query->pager($filter->getCount(), 0);
-    } elseif ($filter->getCount() > 0) {
-      $query->range($filter->getPage() * $filter->getCount(), $filter->getCount());
-    }
+  }
+
+  /**
+   * Add sorting to the query,
+   *
+   * @param QueryInterface $query
+   *   The current entity query.
+   * @param OverviewFilter $filter
+   *   The overview filter.
+   * @param array $keys
+   *   Entity Type keys definition.
+   */
+  protected function getSorting(QueryInterface $query, OverviewFilter $filter, array $keys) {
+    $overview = $filter->getOverview();
     switch ($filter->getSort()) {
       case 'alphabetical':
         $query->sort($keys['label'], 'ASC');
@@ -104,6 +108,33 @@ class EntityQueryEngine extends EngineBase {
         $query->sort($overview->getSortField(), 'DESC');
         break;
     }
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public function getResult(OverviewFilter $filter) {
+    $overview = $filter->getOverview();
+    $storage = $this->entityTypeManager->getStorage($this->getEntityTypeID($overview));
+    $definition = $this->entityTypeManager->getDefinition($this->getEntityTypeID($overview));
+    $keys = $definition->getKeys();
+    $query = $storage->getQuery()
+      ->condition($keys['bundle'], $this->getBundles($overview), 'IN')
+      ->condition('status', 1);
+    if ($definition->isTranslatable() && $this->getSetting('language_filter') ?? FALSE) {
+      $query->condition($keys['langcode'], \Drupal::languageManager()
+        ->getCurrentLanguage()
+        ->getId());
+    }
+    $this->getFieldFilters($query, $filter, $keys);
+    if ($filter->hasPagination()) {
+      // Do not use dependency injection for the request, or it will be serialized with the form state
+      \Drupal::requestStack()->getCurrentRequest()->query->set('page', $filter->getPage());
+      $query->pager($filter->getCount(), 0);
+    } elseif ($filter->getCount() > 0) {
+      $query->range($filter->getPage() * $filter->getCount(), $filter->getCount());
+    }
+    $this->getSorting($query, $filter, $keys);
 
     return $query->accessCheck(TRUE)->execute();
   }
@@ -272,6 +303,19 @@ class EntityQueryEngine extends EngineBase {
    */
   protected function getBundles(Overview $overview) {
     return $overview->getEntityBundles()[$this->getEntityTypeID($overview)];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function settingsForm(array $form, FormStateInterface $form_state) {
+    $form['language_filter'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Filter by language'),
+      '#description' => $this->t('Whether entities should be filtered by current language.'),
+      '#default_value' => $this->getSetting('language_filter') ?? FALSE
+    ];
+    return $form;
   }
 
 }
