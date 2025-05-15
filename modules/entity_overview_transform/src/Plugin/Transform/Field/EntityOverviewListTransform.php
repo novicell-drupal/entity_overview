@@ -143,7 +143,11 @@ class EntityOverviewListTransform extends FieldTransformBase {
       $result = $filter->getOverview()->getOverviewResult($filter);
       $values[$delta] = ['entities' => []];
       foreach ($result->getEntities() as $entity) {
-        $values[$delta]['entities'][] = new \Drupal\transform_api\Transform\EntityTransform($entity->getEntityTypeId(), $entity->id(), $filter->getViewMode());
+        if (method_exists(\Drupal\transform_api\Transform\EntityTransform::class, 'createFromEntity')) {
+          $values[$delta]['entities'][] = new \Drupal\transform_api\Transform\EntityTransform($entity->getEntityTypeId(), $entity->id(), $filter->getViewMode());
+        } else {
+          $values[$delta]['entities'][] = new \Drupal\transform_api\Transform\EntityTransform($entity, $filter->getViewMode());
+        }
       }
     }
     return $values;

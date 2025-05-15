@@ -7,6 +7,8 @@ use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\entity_overview\OverviewFieldInfoInterface;
 use Drupal\entity_overview\OverviewFilter;
 use Drupal\transform_api\Transform\EntityAutocompleteEndpointTransform;
+use Drupal\transform_api\Transform\EntityTransform;
+use Drupal\user\Entity\User;
 
 class OwnerField implements OverviewFieldInfoInterface {
 
@@ -100,12 +102,21 @@ class OwnerField implements OverviewFieldInfoInterface {
    * @inheritDoc
    */
   public function getFieldFormTransform(OverviewFilter $filter): array {
-    return [
-      'type' => 'entity_autocomplete',
-      'title' => $this->label(),
-      'endpoint' => new EntityAutocompleteEndpointTransform('user'),
-      'default_value' => new \Drupal\transform_api\Transform\EntityTransform('user', $filter->getFieldValue($this->id()))
-    ];
+    if (method_exists(\Drupal\transform_api\Transform\EntityTransform::class, 'createFromEntity')) {
+      return [
+        'type' => 'entity_autocomplete',
+        'title' => $this->label(),
+        'endpoint' => new EntityAutocompleteEndpointTransform('user'),
+        'default_value' => new EntityTransform('user', $filter->getFieldValue($this->id()))
+      ];
+    } else {
+      return [
+        'type' => 'entity_autocomplete',
+        'title' => $this->label(),
+        'endpoint' => new EntityAutocompleteEndpointTransform('user'),
+        'default_value' => new EntityTransform(User::load($filter->getFieldValue($this->id())))
+      ];
+    }
   }
 
 }

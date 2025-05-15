@@ -53,11 +53,19 @@ class OverviewResult extends TransformationTypeBase {
     if (empty($types)) {
       $transformation['content'] = [];
     } elseif (count($types) == 1) {
-      $transformation['content'] = new \Drupal\transform_api\Transform\EntityTransform($types[0], $ids, $filter->getViewMode());
+      if (method_exists(\Drupal\transform_api\Transform\EntityTransform::class, 'createFromEntity')) {
+        $transformation['content'] = new \Drupal\transform_api\Transform\EntityTransform($types[0], $ids, $filter->getViewMode());
+      } else {
+        $transformation['content'] = new \Drupal\transform_api\Transform\EntityTransform($entities, $filter->getViewMode());
+      }
     } else {
       $transformation['content'] = [];
       foreach ($result->getEntities() as $entity) {
-        $transformation['content'][] = new \Drupal\transform_api\Transform\EntityTransform($entity->getEntityTypeId(), $entity->id(), $filter->getViewMode());
+        if (method_exists(\Drupal\transform_api\Transform\EntityTransform::class, 'createFromEntity')) {
+          $transformation['content'][] = new \Drupal\transform_api\Transform\EntityTransform($entity->getEntityTypeId(), $entity->id(), $filter->getViewMode());
+        } else {
+          $transformation['content'][] = new \Drupal\transform_api\Transform\EntityTransform($entity, $filter->getViewMode());
+        }
       }
     }
     $transformation['totals_text'] = $overview->getTotalsText($result);
