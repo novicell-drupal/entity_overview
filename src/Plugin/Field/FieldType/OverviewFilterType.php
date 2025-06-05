@@ -20,7 +20,7 @@ use Drupal\Core\TypedData\TypedDataInterface;
  *   module = "entity_overview",
  *   label = @Translation("Overview filter"),
  *   description = @Translation("Field with filter and display options for overviews."),
- *   category = @Translation("Overviews"),
+ *   category = "entity_overviews",
  *   default_widget = "overview_filter_widget",
  *   default_formatter = "overview_list"
  * )

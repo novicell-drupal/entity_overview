@@ -1,0 +1,3 @@
+entity_overviews:
+  label: 'Overviews'
+  description: 'This is a field type category for entity overview fields.'
