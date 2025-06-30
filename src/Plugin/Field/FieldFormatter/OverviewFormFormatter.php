@@ -32,6 +32,7 @@ class OverviewFormFormatter extends OverviewListFormatter {
       }
       $filter = new OverviewFilter($overview_id, $item->getValue());
       $filter->setViewMode($this->getSetting('view_mode'));
+      $filter->setShowTotal($filter->getOverview()->getShowTotal());
 
       $elements[$delta] = \Drupal::formBuilder()->getForm('Drupal\entity_overview\Form\OverviewFilterForm', $filter);
     }
