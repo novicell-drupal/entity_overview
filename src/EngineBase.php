@@ -181,22 +181,24 @@ abstract class EngineBase extends PluginBase implements EngineInterface, Contain
 
     $tags = [];
 
-    foreach ($filter->getOverview()->getEntityBundles() as $entity_type_id => $bundles) {
-      $tags = Cache::mergeTags($tags, $this->entityTypeManager->getDefinition($entity_type_id)->getListCacheTags());
-    }
+    if ($this->usesEntityTypes()) {
+      foreach ($filter->getOverview()->getEntityBundles() as $entity_type_id => $bundles) {
+        $tags = Cache::mergeTags($tags, $this->entityTypeManager->getDefinition($entity_type_id)->getListCacheTags());
+      }
 
-    $overview = $filter->getOverview();
+      $overview = $filter->getOverview();
 
-    $definitions = $this->getFieldDefinitions($overview);
-    $active_fields = array_keys($overview->getFields());
+      $definitions = $this->getFieldDefinitions($overview);
+      $active_fields = array_keys($overview->getFields());
 
-    foreach ($definitions as $definition) {
-      if ($definition->getType() == 'entity_reference' && in_array($definition->getName(), $active_fields)) {
-        $type = $definition->getSetting('target_type');
+      foreach ($definitions as $definition) {
+        if ($definition->getType() == 'entity_reference' && in_array($definition->getName(), $active_fields)) {
+          $type = $definition->getSetting('target_type');
 
-        if ($type !== NULL) {
-          // Add the list cache tags for each entity type referenced by overview fields.
-          $tags = Cache::mergeTags($tags, $this->entityTypeManager->getDefinition($type)->getListCacheTags());
+          if ($type !== NULL) {
+            // Add the list cache tags for each entity type referenced by overview fields.
+            $tags = Cache::mergeTags($tags, $this->entityTypeManager->getDefinition($type)->getListCacheTags());
+          }
         }
       }
     }

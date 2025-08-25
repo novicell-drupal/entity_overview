@@ -2,6 +2,7 @@
 
 namespace Drupal\entity_overview_search_api\Plugin\EntityOverview\Engine;
 
+use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\DependencyInjection\DependencySerializationTrait;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
@@ -213,6 +214,15 @@ class SearchAPIEngine extends EngineBase {
     }
     $options['relevance'] = $this->t('Relevance');
     return $options;
+  }
+
+  /**
+   * @inheritDoc
+   */
+  public function getCacheableMetadata(OverviewFilter $filter, bool $has_facets): CacheableMetadata {
+    $metadata = parent::getCacheableMetadata($filter, $has_facets);
+    $metadata->addCacheTags(['search_api_list:' . $this->getSetting('index')]);
+    return $metadata;
   }
 
   /**
