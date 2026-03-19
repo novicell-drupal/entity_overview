@@ -38,7 +38,7 @@ class OverviewFilter {
       $this->setPagination($values['pagination']);
     }
     if (isset($values['page'])) {
-      $this->setPage($values['page'] ?? 0);
+      $this->setPage((int) $values['page']);
     }
     if (isset($values['show_total'])) {
       $this->setShowTotal($values['show_total'] ?? '');
@@ -290,7 +290,7 @@ class OverviewFilter {
       $this->setCount($request->query->get('count'));
     }
     if ($request->query->has('page')) {
-      $this->setPage($request->query->get('page'));
+      $this->setPage((int) $request->query->get('page'));
     }
     foreach ($this->getFacets() as $field) {
       if (!in_array($field, OverviewManager::baseFields) && $request->query->has($field)) {
