@@ -74,3 +74,16 @@ function entity_overview_update_9006() {
   $module_installer = \Drupal::service('module_installer');
   $module_installer->uninstall(['html5history']);
 }
+
+/**
+ * Register the overview entity definition if an earlier update missed it.
+ */
+function entity_overview_update_9007() {
+  $entity_type_manager = \Drupal::entityTypeManager();
+  $entity_type_manager->clearCachedDefinitions();
+  $update_manager = \Drupal::entityDefinitionUpdateManager();
+
+  if (!$update_manager->getEntityType('entity_overview')) {
+    $update_manager->installEntityType($entity_type_manager->getDefinition('entity_overview'));
+  }
+}
